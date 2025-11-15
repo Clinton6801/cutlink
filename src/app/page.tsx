@@ -1,3 +1,5 @@
+ import Link from 'next/link'
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-black flex flex-col">
@@ -11,9 +13,9 @@ export default function Home() {
               <span className="text-white">Link</span>
             </h1>
           </div>
-          <button className="text-white hover:text-yellow-500 transition">
+          <Link href ="/login" className="text-white hover:text-yellow-500 transition">
             Sign In
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -47,9 +49,9 @@ export default function Home() {
               <p className="text-xl text-gray-300">
                 Connect with skilled hairstylists in your area. Home service or shop visit - your choice.
               </p>
-              <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-8 rounded-lg text-lg transition transform hover:scale-105">
+              <Link href="/signup/customer" className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-8 rounded-lg text-lg transition transform hover:scale-105">
                 Find a Stylist
-              </button>
+              </Link>
               <p className="text-sm text-gray-400 italic">
                 Your barber, your way
               </p>
@@ -85,9 +87,9 @@ export default function Home() {
               <p className="text-xl text-gray-300">
                 Join CutLink and connect with customers ready for quality cuts. Build your reputation, grow your business.
               </p>
-              <button className="bg-white hover:bg-gray-100 text-black font-bold py-4 px-8 rounded-lg text-lg transition transform hover:scale-105">
+              <Link href="/signup/stylist" className="bg-white hover:bg-gray-100 text-black font-bold py-4 px-8 rounded-lg text-lg transition transform hover:scale-105">
                 Join as Stylist
-              </button>
+              </Link>
               <p className="text-sm text-yellow-500 italic">
                 Create opportunities. Make the dough.
               </p>
@@ -200,9 +202,9 @@ export default function Home() {
 
           {/* CTA Button */}
           <div className="text-center mt-16">
-            <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-12 rounded-lg text-xl transition transform hover:scale-105">
+            <Link href="/signup/customer" className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-12 rounded-lg text-xl transition transform hover:scale-105">
               Get Started Now
-            </button>
+            </Link>
           </div>
         </div>
       </section>
