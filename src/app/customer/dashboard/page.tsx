@@ -67,38 +67,40 @@ export default function CustomerDashboard() {
 
   const fetchBookings = async (userId: string) => {
   try {
-    const { data, error } = await supabase
+    // First get the bookings
+    const { data: bookingsData, error: bookingsError } = await supabase
       .from('bookings')
-      .select(`
-        *,
-        stylist_profiles!stylist_id (
-          user_id,
-          profiles!stylist_profiles_user_id_fkey (
-            full_name,
-            avatar_url
-          )
-        )
-      `)
+      .select('*')
       .eq('customer_id', userId)
       .order('appointment_date', { ascending: false })
 
-    if (error) {
-      console.error('Supabase error:', error)
-      throw error
+    if (bookingsError) {
+      console.error('Bookings error:', bookingsError)
+      throw bookingsError
     }
-    
-    // Transform the data to match our interface
-    const transformedData = data?.map(booking => ({
-      ...booking,
-      stylist: {
-        profiles: booking.stylist_profiles?.profiles || { full_name: 'Unknown', avatar_url: null }
-      }
-    }))
-    
-    setBookings(transformedData || [])
+
+    // Then for each booking, get the stylist info
+    const bookingsWithStylists = await Promise.all(
+      (bookingsData || []).map(async (booking) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', booking.stylist_id)
+          .single()
+
+        return {
+          ...booking,
+          stylist: {
+            profiles: profileData || { full_name: 'Unknown Stylist', avatar_url: null }
+          }
+        }
+      })
+    )
+
+    setBookings(bookingsWithStylists)
   } catch (error) {
     console.error('Error fetching bookings:', error)
-    setBookings([]) // Set empty array on error
+    setBookings([]) // Set empty array on error so page still loads
   }
 }
   const handleSignOut = async () => {
