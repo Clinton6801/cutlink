@@ -85,29 +85,51 @@ export default function StylistDashboard() {
   }
 
   const fetchBookings = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          customer:customer_id (
-            profiles:profiles!inner (
-              full_name,
-              phone_number,
-              avatar_url
-            )
-          )
-        `)
-        .eq('stylist_id', userId)
-        .order('appointment_date', { ascending: true })
+  try {
+    // First get the bookings
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('stylist_id', userId)
+      .order('appointment_date', { ascending: true })
 
-      if (error) throw error
-      setBookings((data as any) || [])
-    } catch (error) {
-      console.error('Error fetching bookings:', error)
-    }
+   if (bookingsError) {
+  console.error('Bookings error details:', {
+    message: bookingsError.message,
+    details: bookingsError.details,
+    hint: bookingsError.hint,
+    code: bookingsError.code
+  })
+  throw bookingsError
+}
+    // Then for each booking, get the customer info
+    const bookingsWithCustomers = await Promise.all(
+      (bookingsData || []).map(async (booking) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, phone_number, avatar_url')
+          .eq('id', booking.customer_id)
+          .single()
+
+        return {
+          ...booking,
+          customer: {
+            profiles: profileData || { 
+              full_name: 'Unknown Customer', 
+              phone_number: 'N/A',
+              avatar_url: null 
+            }
+          }
+        }
+      })
+    )
+
+    setBookings(bookingsWithCustomers)
+  } catch (error) {
+    console.error('Error fetching bookings:', error)
+    setBookings([]) // Set empty array on error so page still loads
   }
-
+}
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
@@ -175,7 +197,12 @@ export default function StylistDashboard() {
               <span className="text-white">Link</span>
             </h1>
           </Link>
-          <div className="flex items-center gap-6">
+               <div className="flex items-center gap-6">
+          <Link href="/stylist/edit-profile"
+                className="text-gray-300 hover:text-yellow-500 transition font-medium">
+                    Edit Profile
+            </Link>
+          
             <Link
               href={`/stylist/${user?.id}`}
               className="text-gray-300 hover:text-yellow-500 transition font-medium"

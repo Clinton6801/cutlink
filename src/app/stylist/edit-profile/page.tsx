@@ -1,0 +1,354 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase } from '../../../lib/supabase'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import ImageUpload from '../../../components/ImageUpload'
+
+export default function EditStylistProfile() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [portfolioImages, setPortfolioImages] = useState<string[]>([])
+  
+  const [formData, setFormData] = useState({
+    bio: '',
+    yearsOfExperience: 0,
+    specialties: [] as string[],
+    serviceType: 'both',
+    shopAddress: '',
+    priceRangeMin: 0,
+    priceRangeMax: 0,
+  })
+
+  const specialtyOptions = [
+    'Fade', 'Buzz Cut', 'Afro', 'Dreadlocks', 'Braids',
+    'Cornrows', 'Twists', 'Low Cut', 'Beard Trim', 'Hair Coloring'
+  ]
+
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
+  const loadProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      setUser(user)
+
+      // Get stylist profile
+      const { data: stylistData, error } = await supabase
+        .from('stylist_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) throw error
+
+      if (stylistData) {
+        setFormData({
+          bio: stylistData.bio || '',
+          yearsOfExperience: stylistData.years_of_experience || 0,
+          specialties: stylistData.specialties || [],
+          serviceType: stylistData.service_type || 'both',
+          shopAddress: stylistData.shop_address || '',
+          priceRangeMin: stylistData.price_range_min || 0,
+          priceRangeMax: stylistData.price_range_max || 0,
+        })
+        setPortfolioImages(stylistData.portfolio_images || [])
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleSpecialty = (specialty: string) => {
+    if (formData.specialties.includes(specialty)) {
+      setFormData({
+        ...formData,
+        specialties: formData.specialties.filter(s => s !== specialty)
+      })
+    } else {
+      setFormData({
+        ...formData,
+        specialties: [...formData.specialties, specialty]
+      })
+    }
+  }
+
+  const handleImageUpload = (url: string) => {
+    setPortfolioImages([...portfolioImages, url])
+  }
+
+  const removeImage = async (imageUrl: string) => {
+    if (!confirm('Delete this image?')) return
+
+    try {
+      // Extract file path from URL
+      const urlParts = imageUrl.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+
+      // Delete from storage
+      await supabase.storage
+        .from('stylist-portfolios')
+        .remove([fileName])
+
+      // Remove from state
+      setPortfolioImages(portfolioImages.filter(img => img !== imageUrl))
+    } catch (error) {
+      console.error('Error deleting image:', error)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+
+      const { error } = await supabase
+        .from('stylist_profiles')
+        .update({
+          bio: formData.bio,
+          years_of_experience: formData.yearsOfExperience,
+          specialties: formData.specialties,
+          service_type: formData.serviceType,
+          shop_address: formData.shopAddress,
+          price_range_min: formData.priceRangeMin,
+          price_range_max: formData.priceRangeMax,
+          portfolio_images: portfolioImages,
+        })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      alert('Profile updated successfully!')
+      router.push('/stylist/dashboard')
+    } catch (error: any) {
+      alert('Error updating profile: ' + error.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">✂️</div>
+          <p className="text-xl text-gray-400">Loading profile...</p>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-black">
+      {/* Header */}
+      <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/stylist/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-yellow-500 transition">
+            <span>←</span>
+            <span>Back to Dashboard</span>
+          </Link>
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-3xl">✂️</span>
+            <h1 className="text-2xl font-bold">
+              <span className="text-yellow-500">Cut</span>
+              <span className="text-white">Link</span>
+            </h1>
+          </Link>
+          <div className="w-32"></div>
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-bold text-white mb-2">
+            Edit Your <span className="text-yellow-500">Profile</span>
+          </h2>
+          <p className="text-gray-400">Update your information and portfolio</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-8 space-y-8">
+          {/* Bio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Bio
+            </label>
+            <textarea
+              rows={4}
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+              placeholder="Tell customers about yourself and your skills..."
+            />
+          </div>
+
+          {/* Years of Experience */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Years of Experience
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formData.yearsOfExperience}
+              onChange={(e) => setFormData({ ...formData, yearsOfExperience: parseInt(e.target.value) || 0 })}
+              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Specialties */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              Specialties
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {specialtyOptions.map((specialty) => (
+                <button
+                  key={specialty}
+                  type="button"
+                  onClick={() => toggleSpecialty(specialty)}
+                  className={`px-4 py-2 rounded-lg border transition ${
+                    formData.specialties.includes(specialty)
+                      ? 'bg-yellow-500 text-black border-yellow-500'
+                      : 'bg-black text-gray-300 border-gray-700 hover:border-yellow-500'
+                  }`}
+                >
+                  {specialty}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Service Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              Service Type
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {['home_service', 'shop', 'both'].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, serviceType: type })}
+                  className={`px-4 py-2 rounded-lg border transition capitalize ${
+                    formData.serviceType === type
+                      ? 'bg-yellow-500 text-black border-yellow-500'
+                      : 'bg-black text-gray-300 border-gray-700 hover:border-yellow-500'
+                  }`}
+                >
+                  {type.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Shop Address */}
+          {(formData.serviceType === 'shop' || formData.serviceType === 'both') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Shop Address
+              </label>
+              <input
+                type="text"
+                value={formData.shopAddress}
+                onChange={(e) => setFormData({ ...formData, shopAddress: e.target.value })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                placeholder="Enter your shop address"
+              />
+            </div>
+          )}
+
+          {/* Price Range */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Min Price (₦)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.priceRangeMin}
+                onChange={(e) => setFormData({ ...formData, priceRangeMin: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Max Price (₦)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.priceRangeMax}
+                onChange={(e) => setFormData({ ...formData, priceRangeMax: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Portfolio Images */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              Portfolio Images
+            </label>
+            
+            {/* Image Upload */}
+            <ImageUpload
+              onUploadComplete={handleImageUpload}
+              currentImages={portfolioImages}
+              maxImages={6}
+            />
+
+            {/* Display Uploaded Images */}
+            {portfolioImages.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                {portfolioImages.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={imageUrl}
+                      alt={`Portfolio ${index + 1}`}
+                      className="w-full aspect-square object-cover rounded-lg border border-gray-700"
+                    />
+                    <button
+                      onClick={() => removeImage(imageUrl)}
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Save Button */}
+          <div className="flex gap-4">
+            <button
+              onClick={() => router.push('/stylist/dashboard')}
+              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-6 rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
