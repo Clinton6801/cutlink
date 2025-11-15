@@ -52,7 +52,7 @@ export default function Home() {
               <Link href="/signup/customer" className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-8 rounded-lg text-lg transition transform hover:scale-105">
                 Find a Stylist
               </Link>
-              <p className="text-sm text-gray-400 italic">
+              <p className="text-sm text-gray-400 italic mt-4">
                 Your barber, your way
               </p>
             </div>
@@ -90,7 +90,7 @@ export default function Home() {
               <Link href="/signup/stylist" className="bg-white hover:bg-gray-100 text-black font-bold py-4 px-8 rounded-lg text-lg transition transform hover:scale-105">
                 Join as Stylist
               </Link>
-              <p className="text-sm text-yellow-500 italic">
+              <p className="text-sm text-yellow-500 italic mt-4">
                 Create opportunities. Make the dough.
               </p>
             </div>
