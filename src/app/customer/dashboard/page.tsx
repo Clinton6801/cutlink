@@ -16,6 +16,7 @@ interface Booking {
   status: string
   payment_status: string
   created_at: string
+  stylist_id: string
   stylist: {
     profiles: {
       full_name: string
