@@ -343,6 +343,12 @@ export default function CustomerDashboard() {
                             >
                           View Stylist
                                </Link>
+
+
+                               <Link href={`/messages/${booking.stylist_id}`} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg text-center transition text-sm"
+                               >
+                                💬 Message
+                                </Link>
                   {booking.status === 'pending' && (
                     <button
                       onClick={() => cancelBooking(booking.id)}

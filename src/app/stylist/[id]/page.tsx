@@ -45,11 +45,19 @@ export default function StylistProfile() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'about' | 'reviews'>('about')
+  const [currentUser, setCurrentUser] = useState<any>(null)
 
   useEffect(() => {
+     checkCurrentUser() 
     fetchStylistData()
     fetchReviews()
   }, [stylistId])
+
+// ← ADD THIS ENTIRE FUNCTION HERE (between useEffect and fetchStylistData)
+const checkCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  setCurrentUser(user)
+}
 
   const fetchStylistData = async () => {
     try {
@@ -137,22 +145,33 @@ export default function StylistProfile() {
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/browse" className="flex items-center gap-2 text-gray-400 hover:text-yellow-500 transition">
-            <span>←</span>
-            <span>Back to Browse</span>
-          </Link>
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-3xl">✂️</span>
-            <h1 className="text-2xl font-bold">
-              <span className="text-yellow-500">Cut</span>
-              <span className="text-white">Link</span>
-            </h1>
-          </Link>
-          <div className="w-32"></div>
-        </div>
-      </header>
+     <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <Link href="/browse" className="flex items-center gap-2 text-gray-400 hover:text-yellow-500 transition">
+      <span>←</span>
+      <span>Back to Browse</span>
+    </Link>
+    <Link href="/" className="flex items-center gap-2">
+      <span className="text-3xl">✂️</span>
+      <h1 className="text-2xl font-bold">
+        <span className="text-yellow-500">Cut</span>
+        <span className="text-white">Link</span>
+      </h1>
+    </Link>
+    {/* ← REPLACE THE <div className="w-32"></div> WITH THIS: */}
+    <div className="flex items-center gap-4">
+      {currentUser && currentUser.id === stylistId && (
+        <Link
+          href="/stylist/dashboard"
+          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition"
+        >
+          My Dashboard
+        </Link>
+      )}
+      {!currentUser && <div className="w-32"></div>}
+    </div>
+  </div>
+</header>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid lg:grid-cols-3 gap-8">
@@ -260,9 +279,11 @@ export default function StylistProfile() {
                 </button>
 
                 {/* Contact Button */}
-                <button className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition">
-                  💬 Message
-                </button>
+                <Link
+                    href={`/messages/${stylistId}`}
+                    className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition block text-center">
+                      💬 Message
+                 </Link>
               </div>
             </div>
           </div>
