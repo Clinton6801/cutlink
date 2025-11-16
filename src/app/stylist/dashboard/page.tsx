@@ -16,6 +16,7 @@ interface Booking {
   status: string
   payment_status: string
   created_at: string
+  customer_id: string
   customer: {
     profiles: {
       full_name: string
@@ -453,9 +454,11 @@ export default function StylistDashboard() {
                       Mark Complete
                     </button>
                   )}
-                  <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm">
+                  <Link 
+                  href={`/messages/${booking.customer_id}`}
+                   className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm block text-center">
                     💬 Message
-                  </button>
+                    </Link>
                 </div>
               </div>
 
