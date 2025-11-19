@@ -199,6 +199,12 @@ export default function StylistDashboard() {
             </h1>
           </Link>
                <div className="flex items-center gap-6">
+
+                      <Link 
+                      href="/messages" 
+                      className="text-gray-300 hover:text-yellow-500
+                      transition font-medium"> 💬 Messages
+                      </Link>
           <Link href="/stylist/edit-profile"
                 className="text-gray-300 hover:text-yellow-500 transition font-medium">
                     Edit Profile

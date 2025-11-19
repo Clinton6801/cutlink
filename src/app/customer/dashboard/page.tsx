@@ -165,6 +165,14 @@ export default function CustomerDashboard() {
             >
               Browse Stylists
             </Link>
+
+            <div className="flex items-center gap-6">
+            <Link href="/messages"
+            className="text-gray-300 hover:text-yellow-500 transition
+            font-medium"> 💬 Messages
+                </Link>
+
+</div>
             <button
               onClick={handleSignOut}
               className="text-gray-300 hover:text-red-500 transition"
