@@ -42,6 +42,7 @@ export default function StylistDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'completed'>('pending')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
 
   useEffect(() => {
     checkAuth()
@@ -189,42 +190,87 @@ export default function StylistDashboard() {
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-3xl">✂️</span>
-            <h1 className="text-2xl font-bold">
-              <span className="text-yellow-500">Cut</span>
-              <span className="text-white">Link</span>
-            </h1>
-          </Link>
-               <div className="flex items-center gap-6">
+      {/* Header */}
+<header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+    {/* Mobile Layout */}
+    <div className="flex md:hidden items-center justify-between">
+      <Link href="/" className="flex items-center gap-2">
+        <span className="text-2xl">✂️</span>
+        <h1 className="text-xl font-bold">
+          <span className="text-yellow-500">Cut</span>
+          <span className="text-white">Link</span>
+        </h1>
+      </Link>
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="text-white text-2xl"
+      >
+        ☰
+      </button>
+    </div>
 
-                      <Link 
-                      href="/messages" 
-                      className="text-gray-300 hover:text-yellow-500
-                      transition font-medium"> 💬 Messages
-                      </Link>
-          <Link href="/stylist/edit-profile"
-                className="text-gray-300 hover:text-yellow-500 transition font-medium">
-                    Edit Profile
-            </Link>
-          
-            <Link
-              href={`/stylist/${user?.id}`}
-              className="text-gray-300 hover:text-yellow-500 transition font-medium"
-            >
-              View My Profile
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="text-gray-300 hover:text-red-500 transition"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+    {/* Desktop Layout */}
+    <div className="hidden md:flex items-center justify-between">
+      <Link href="/" className="flex items-center gap-2">
+        <span className="text-3xl">✂️</span>
+        <h1 className="text-2xl font-bold">
+          <span className="text-yellow-500">Cut</span>
+          <span className="text-white">Link</span>
+        </h1>
+      </Link>
+      <div className="flex items-center gap-6">
+        <Link
+          href="/messages"
+          className="text-gray-300 hover:text-yellow-500 transition font-medium"
+        >
+          💬 Messages
+        </Link>
+        <Link
+          href="/browse"
+          className="text-gray-300 hover:text-yellow-500 transition font-medium"
+        >
+          Browse Stylists
+        </Link>
+        <button
+          onClick={handleSignOut}
+          className="text-gray-300 hover:text-red-500 transition"
+        >
+          Sign Out
+        </button>
+      </div>
+    </div>
+
+    {/* Mobile Menu Dropdown */}
+    {mobileMenuOpen && (
+      <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
+        <Link
+          href="/messages"
+          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          💬 Messages
+        </Link>
+        <Link
+          href="/browse"
+          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          Browse Stylists
+        </Link>
+        <button
+          onClick={() => {
+            setMobileMenuOpen(false)
+            handleSignOut()
+          }}
+          className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
+        >
+          Sign Out
+        </button>
+      </div>
+    )}
+  </div>
+</header>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Welcome Section */}
