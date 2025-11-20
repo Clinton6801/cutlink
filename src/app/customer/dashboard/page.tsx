@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import ReviewModal from '../../../components/ReviewModal'
 
 interface Booking {
   id: string
@@ -33,6 +34,8 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
+  const [reviewModalOpen, setReviewModalOpen] = useState(false) 
+  const [selectedBooking, setSelectedBooking] = useState<any>(null)
 
   useEffect(() => {
     checkAuth()
@@ -127,6 +130,11 @@ export default function CustomerDashboard() {
       alert('Error cancelling booking: ' + error.message)
     }
   }
+
+  const openReviewModal = (booking: any) => {
+  setSelectedBooking(booking)
+  setReviewModalOpen(true)
+     }
 
   const upcomingBookings = bookings.filter(b => 
     b.status === 'pending' || b.status === 'confirmed'
@@ -415,11 +423,14 @@ export default function CustomerDashboard() {
                       Cancel
                     </button>
                   )}
-                  {booking.status === 'completed' && (
-                    <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm">
-                      Review
-                    </button>
-                  )}
+                 {booking.status === 'completed' && (
+  <button 
+    onClick={() => openReviewModal(booking)}
+    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
+  >
+    ⭐ Leave Review
+  </button>
+)}
                 </div>
               </div>
 
@@ -434,6 +445,26 @@ export default function CustomerDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {reviewModalOpen && selectedBooking && (
+        <ReviewModal
+          bookingId={selectedBooking.id}
+          stylistId={selectedBooking.stylist_id}
+          customerId={user.id}
+          stylistName={selectedBooking.stylist?.profiles?.full_name || 'Stylist'}
+          onClose={() => {
+            setReviewModalOpen(false)
+            setSelectedBooking(null)
+          }}
+          onSuccess={() => {
+            setReviewModalOpen(false)
+            setSelectedBooking(null)
+            alert('Thank you for your review!')
+            fetchBookings(user.id)
+          }}
+        />
+      )}
     </main>
   )
 }                                                                                                                                                                                                                                                                                               
