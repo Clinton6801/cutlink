@@ -98,7 +98,63 @@ if (profileData) {
     }
   }
 
-  
+        // ← ADD THIS ENTIRE FUNCTION HERE
+const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  try {
+    setUploadingAvatar(true)
+
+    if (!event.target.files || event.target.files.length === 0) {
+      throw new Error('You must select an image to upload.')
+    }
+
+    const file = event.target.files[0]
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('File size must be less than 5MB')
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('File must be an image')
+    }
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`
+    const filePath = `${fileName}`
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('stylist-portfolios')
+      .upload(filePath, file)
+
+    if (uploadError) throw uploadError
+
+    // Get public URL
+    const { data } = supabase.storage
+      .from('stylist-portfolios')
+      .getPublicUrl(filePath)
+
+    // Update profile with new avatar URL
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: data.publicUrl })
+      .eq('id', user.id)
+
+    if (updateError) throw updateError
+
+    setAvatarUrl(data.publicUrl)
+    alert('Avatar updated successfully!')
+    
+    // Reset input
+    event.target.value = ''
+  } catch (error: any) {
+    alert('Error uploading avatar: ' + error.message)
+    console.error('Error uploading avatar:', error)
+  } finally {
+    setUploadingAvatar(false)
+  }
+}
 
   const handleImageUpload = (url: string) => {
     setPortfolioImages([...portfolioImages, url])
