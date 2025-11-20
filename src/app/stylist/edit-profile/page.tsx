@@ -304,7 +304,7 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
       disabled={uploadingAvatar}
       className="hidden"
     />
-    <p className="text-xs text-gray-500 mt-2">
+    < p className="text-xs text-gray-500 mt-2">
       PNG, JPG, JPEG (MAX. 5MB)
     </p>
   </div>
