@@ -249,6 +249,65 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
         </div>
 
         <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-8 space-y-8">
+
+          <div className="text-center">
+    <label className="block text-sm font-medium text-gray-300 mb-4">
+      Profile Picture
+    </label>
+    
+    {/* Current Avatar */}
+    <div className="mb-4 flex justify-center">
+      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-500/20 to-gray-800 flex items-center justify-center overflow-hidden">
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="text-6xl">👤</div>
+        )}
+      </div>
+    </div>
+
+    {/* Upload Button */}
+    <label
+      htmlFor="avatar-upload"
+      className={`
+        inline-flex items-center justify-center px-6 py-3 
+        border-2 border-dashed rounded-lg cursor-pointer transition
+        ${uploadingAvatar 
+          ? 'border-gray-600 bg-gray-800 cursor-not-allowed' 
+          : 'border-gray-700 bg-black hover:border-yellow-500 hover:bg-gray-900'
+        }
+      `}
+    >
+      {uploadingAvatar ? (
+        <>
+          <span className="animate-spin mr-2">⏳</span>
+          <span className="text-gray-400">Uploading...</span>
+        </>
+      ) : (
+        <>
+          <span className="text-2xl mr-2">📸</span>
+          <span className="text-yellow-500 font-medium">
+            {avatarUrl ? 'Change Picture' : 'Upload Picture'}
+          </span>
+        </>
+      )}
+    </label>
+    <input
+      id="avatar-upload"
+      type="file"
+      accept="image/*"
+      onChange={uploadAvatar}
+      disabled={uploadingAvatar}
+      className="hidden"
+    />
+    <p className="text-xs text-gray-500 mt-2">
+      PNG, JPG, JPEG (MAX. 5MB)
+    </p>
+  </div>
           {/* Bio */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
