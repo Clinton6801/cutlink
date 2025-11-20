@@ -12,6 +12,8 @@ export default function EditStylistProfile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [portfolioImages, setPortfolioImages] = useState<string[]>([])
+  const [avatarUrl, setAvatarUrl] = useState<string>('') 
+const [uploadingAvatar, setUploadingAvatar] = useState(false) 
   
   const [formData, setFormData] = useState({
     bio: '',
