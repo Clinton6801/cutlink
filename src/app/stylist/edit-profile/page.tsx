@@ -13,7 +13,7 @@ export default function EditStylistProfile() {
   const [saving, setSaving] = useState(false)
   const [portfolioImages, setPortfolioImages] = useState<string[]>([])
   const [avatarUrl, setAvatarUrl] = useState<string>('') 
-const [uploadingAvatar, setUploadingAvatar] = useState(false) 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false) 
   
   const [formData, setFormData] = useState({
     bio: '',
@@ -66,6 +66,17 @@ const [uploadingAvatar, setUploadingAvatar] = useState(false)
         })
         setPortfolioImages(stylistData.portfolio_images || [])
       }
+
+      // Get user profile for avatar
+const { data: profileData } = await supabase
+  .from('profiles')
+  .select('avatar_url')
+  .eq('id', user.id)
+  .single()
+
+if (profileData) {
+  setAvatarUrl(profileData.avatar_url || '')
+}
     } catch (error) {
       console.error('Error loading profile:', error)
     } finally {
@@ -86,6 +97,8 @@ const [uploadingAvatar, setUploadingAvatar] = useState(false)
       })
     }
   }
+
+  
 
   const handleImageUpload = (url: string) => {
     setPortfolioImages([...portfolioImages, url])
