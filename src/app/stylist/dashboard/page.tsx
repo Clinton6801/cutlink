@@ -202,6 +202,7 @@ export default function StylistDashboard() {
           <span className="text-white">Link</span>
         </h1>
       </Link>
+      {/* Mobile Menu Button */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         className="text-white text-2xl"
@@ -227,10 +228,16 @@ export default function StylistDashboard() {
           💬 Messages
         </Link>
         <Link
-          href="/browse"
+          href="/stylist/edit-profile"
           className="text-gray-300 hover:text-yellow-500 transition font-medium"
         >
-          Browse Stylists
+          Edit Profile
+        </Link>
+        <Link
+          href={`/stylist/${user?.id}`}
+          className="text-gray-300 hover:text-yellow-500 transition font-medium"
+        >
+          View My Profile
         </Link>
         <button
           onClick={handleSignOut}
@@ -252,11 +259,18 @@ export default function StylistDashboard() {
           💬 Messages
         </Link>
         <Link
-          href="/browse"
+          href="/stylist/edit-profile"
           className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
           onClick={() => setMobileMenuOpen(false)}
         >
-          Browse Stylists
+          Edit Profile
+        </Link>
+        <Link
+          href={`/stylist/${user?.id}`}
+          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          View My Profile
         </Link>
         <button
           onClick={() => {
