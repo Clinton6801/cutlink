@@ -11,6 +11,7 @@ export default function StylistSignup() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword:'',
     fullName: '',
     phoneNumber: '',
     bio: '',
@@ -23,6 +24,8 @@ export default function StylistSignup() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const specialtyOptions = [
     'Fade', 'Buzz Cut', 'Afro', 'Dreadlocks', 'Braids', 
@@ -47,6 +50,18 @@ export default function StylistSignup() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+     if (formData.password !== formData.confirmPassword) {
+    setError('Passwords do not match!')
+    setLoading(false)
+    return
+  }
+
+  if (formData.password.length < 6) {
+    setError('Password must be at least 6 characters')
+    setLoading(false)
+    return
+  }
 
     try {
       // 1. Sign up the user with Supabase Auth
@@ -180,21 +195,59 @@ export default function StylistSignup() {
                 </div>
 
                 {/* Password */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
-                    placeholder="At least 6 characters"
-                    minLength={6}
-                  />
-                </div>
+               <div>
+  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+    Password
+  </label>
+  <div className="relative">
+    <input
+      id="password"
+      type={showPassword ? "text" : "password"}
+      required
+      value={formData.password}
+      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+      className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none pr-12"
+      placeholder="At least 6 characters"
+      minLength={6}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+    >
+      {showPassword ? '👁️' : '👁️‍🗨️'}
+    </button>
+  </div>
+</div>
+
+{/* Confirm Password */}
+<div>
+  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+    Confirm Password
+  </label>
+  <div className="relative">
+    <input
+      id="confirmPassword"
+      type={showConfirmPassword ? "text" : "password"}
+      required
+      value={formData.confirmPassword}
+      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+      className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none pr-12"
+      placeholder="Confirm your password"
+      minLength={6}
+    />
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+    >
+      {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+    </button>
+  </div>
+  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+    <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+  )}
+</div>
 
                 {/* Next Button */}
                 <button
