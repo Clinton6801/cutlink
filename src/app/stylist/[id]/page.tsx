@@ -12,6 +12,7 @@ interface StylistProfile {
   years_of_experience: number
   specialties: string[]
   service_type: string
+  location: string
   shop_address: string
   price_range_min: number
   price_range_max: number
@@ -269,6 +270,17 @@ const checkCurrentUser = async () => {
                     <div className="text-white">{stylist.shop_address}</div>
                   </div>
                 )}
+
+                {/* ← ADD LOCATION/AREA HERE */}
+{stylist.location && (
+  <div className="mb-6">
+    <div className="text-sm text-gray-400 mb-1">Area/City</div>
+    <div className="text-white flex items-center gap-2">
+      <span>🌍</span>
+      <span>{stylist.location}</span>
+    </div>
+  </div>
+)}
 
                 {/* Book Now Button */}
                 <button

@@ -11,6 +11,7 @@ interface Stylist {
   years_of_experience: number
   specialties: string[]
   service_type: string
+   location: string  
   shop_address: string
   price_range_min: number
   price_range_max: number
@@ -263,7 +264,7 @@ export default function BrowseStylists() {
               specialty: 'all',
               minPrice: '',
               maxPrice: '',
-              minRating: ''
+              minRating: '',
               location: 'all'
             })}
             className="mt-4 text-yellow-500 hover:text-yellow-400 text-sm"
@@ -350,7 +351,7 @@ export default function BrowseStylists() {
                 </p>
 
                 {/* Specialties */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                              <div className="flex flex-wrap gap-2 mb-4">
                   {stylist.specialties.slice(0, 3).map((specialty) => (
                     <span
                       key={specialty}
