@@ -37,6 +37,8 @@ export default function CustomerDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
   const [reviewModalOpen, setReviewModalOpen] = useState(false) 
   const [selectedBooking, setSelectedBooking] = useState<any>(null)
+  const [cancellationModalOpen, setCancellationModalOpen] = useState(false)
+const [bookingToCancel, setBookingToCancel] = useState<any>(null)
 
   useEffect(() => {
     checkAuth()
