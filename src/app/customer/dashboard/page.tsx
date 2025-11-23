@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ReviewModal from '../../../components/ReviewModal'
+import CancellationModal from '../../../components/CancellationModal' // ← ADD THIS
 
 interface Booking {
   id: string
