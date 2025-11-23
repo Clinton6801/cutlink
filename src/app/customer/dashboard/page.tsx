@@ -404,14 +404,14 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
                                >
                                 💬 Message
                                 </Link>
-                  {booking.status === 'pending' && (
-                    <button
-                      onClick={() => cancelBooking(booking.id)}
-                      className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                 {booking.status === 'pending' && (
+  <button
+    onClick={() => cancelBooking(booking)}
+    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
+  >
+    Cancel
+  </button>
+)}
                  {booking.status === 'completed' && (
   <button 
     onClick={() => openReviewModal(booking)}
