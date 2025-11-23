@@ -374,6 +374,14 @@ export default function BrowseStylists() {
                   </span>
                 </div>
 
+                {/* ← ADD LOCATION HERE (right after Service Type) */}
+{stylist.location && (
+  <div className="flex items-center gap-2 mb-4 text-sm text-gray-400">
+    <span>🌍</span>
+    <span>{stylist.location}</span>
+  </div>
+)}
+
                 {/* Price Range */}
                 <div className="mb-4">
                   <span className="text-yellow-500 font-bold">
