@@ -32,7 +32,8 @@ export default function BrowseStylists() {
     specialty: 'all',
     minPrice: '',
     maxPrice: '',
-    minRating: ''
+    minRating: '',
+     location: 'all'
   })
 
   // Fetch stylists from database
@@ -89,8 +90,12 @@ export default function BrowseStylists() {
     // Filter by rating
     const matchesRating =
       !filters.minRating || stylist.rating >= parseFloat(filters.minRating)
+    //  filter by location
+      const matchesLocation =
+    filters.location === 'all' ||
+    stylist.location === filters.location
 
-    return matchesSearch && matchesServiceType && matchesSpecialty && matchesPrice && matchesRating
+    return matchesSearch && matchesServiceType && matchesSpecialty && matchesPrice && matchesRating && matchesLocation
   })
 
   const allSpecialties = Array.from(
@@ -151,7 +156,7 @@ export default function BrowseStylists() {
         {/* Filters */}
         <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6 mb-8">
           <h3 className="text-xl font-bold text-white mb-4">Filters</h3>
-          <div className="grid md:grid-cols-5 gap-4">
+          <div className="grid md:grid-cols-6 gap-4">
             {/* Service Type */}
             <div>
               <label className="block text-sm text-gray-400 mb-2">Service Type</label>
@@ -166,6 +171,36 @@ export default function BrowseStylists() {
                 <option value="both">Both</option>
               </select>
             </div>
+
+            {/* ← ADD LOCATION FILTER HERE (between Service Type and Specialty) */}
+  {/* Location */}
+  <div>
+    <label className="block text-sm text-gray-400 mb-2">Location</label>
+    <select
+      value={filters.location}
+      onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+      className="w-full px-4 py-2 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+    >
+      <option value="all">All Locations</option>
+      <option value="Lagos">Lagos</option>
+      <option value="Abuja">Abuja</option>
+      <option value="Port Harcourt">Port Harcourt</option>
+      <option value="Ibadan">Ibadan</option>
+      <option value="Kano">Kano</option>
+      <option value="Benin City">Benin City</option>
+      <option value="Enugu">Enugu</option>
+      <option value="Kaduna">Kaduna</option>
+      <option value="Jos">Jos</option>
+      <option value="Calabar">Calabar</option>
+      <option value="Warri">Warri</option>
+      <option value="Abeokuta">Abeokuta</option>
+      <option value="Ilorin">Ilorin</option>
+      <option value="Owerri">Owerri</option>
+      <option value="Akure">Akure</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+
 
             {/* Specialty */}
             <div>
@@ -229,6 +264,7 @@ export default function BrowseStylists() {
               minPrice: '',
               maxPrice: '',
               minRating: ''
+              location: 'all'
             })}
             className="mt-4 text-yellow-500 hover:text-yellow-400 text-sm"
           >

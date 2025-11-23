@@ -21,6 +21,7 @@ export default function EditStylistProfile() {
     specialties: [] as string[],
     serviceType: 'both',
     shopAddress: '',
+    location: '', 
     priceRangeMin: 0,
     priceRangeMax: 0,
   })
@@ -61,6 +62,7 @@ export default function EditStylistProfile() {
           specialties: stylistData.specialties || [],
           serviceType: stylistData.service_type || 'both',
           shopAddress: stylistData.shop_address || '',
+          location: stylistData.location || '', // ← ADD THIS
           priceRangeMin: stylistData.price_range_min || 0,
           priceRangeMax: stylistData.price_range_max || 0,
         })
@@ -192,6 +194,7 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
           specialties: formData.specialties,
           service_type: formData.serviceType,
           shop_address: formData.shopAddress,
+          location: formData.location,
           price_range_min: formData.priceRangeMin,
           price_range_max: formData.priceRangeMax,
           portfolio_images: portfolioImages,
@@ -381,6 +384,35 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
               ))}
             </div>
           </div>
+
+          <div>
+  <label className="block text-sm font-medium text-gray-300 mb-2">
+    Location/Area
+  </label>
+  <select
+    value={formData.location}
+    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+    className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+  >
+    <option value="">Select your location</option>
+    <option value="Lagos">Lagos</option>
+    <option value="Abuja">Abuja</option>
+    <option value="Port Harcourt">Port Harcourt</option>
+    <option value="Ibadan">Ibadan</option>
+    <option value="Kano">Kano</option>
+    <option value="Benin City">Benin City</option>
+    <option value="Enugu">Enugu</option>
+    <option value="Kaduna">Kaduna</option>
+    <option value="Jos">Jos</option>
+    <option value="Calabar">Calabar</option>
+    <option value="Warri">Warri</option>
+    <option value="Abeokuta">Abeokuta</option>
+    <option value="Ilorin">Ilorin</option>
+    <option value="Owerri">Owerri</option>
+    <option value="Akure">Akure</option>
+    <option value="Other">Other</option>
+  </select>
+</div>
 
           {/* Shop Address */}
           {(formData.serviceType === 'shop' || formData.serviceType === 'both') && (
