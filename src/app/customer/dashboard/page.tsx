@@ -116,24 +116,10 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
     router.push('/')
   }
 
-  const cancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId)
-
-      if (error) throw error
-
-      alert('Booking cancelled successfully')
-      if (user) fetchBookings(user.id)
-    } catch (error: any) {
-      alert('Error cancelling booking: ' + error.message)
-    }
-  }
-
+ const cancelBooking = (booking: any) => {
+  setBookingToCancel(booking)
+  setCancellationModalOpen(true)
+}
   const openReviewModal = (booking: any) => {
   setSelectedBooking(booking)
   setReviewModalOpen(true)
