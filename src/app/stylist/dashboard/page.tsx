@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import CancellationModal from '../../../components/CancellationModal' // ← ADD THIS
 
 interface Booking {
   id: string
@@ -43,6 +44,8 @@ export default function StylistDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'completed'>('pending')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
+  const [cancellationModalOpen, setCancellationModalOpen] = useState(false)
+const [bookingToCancel, setBookingToCancel] = useState<any>(null) 
 
   useEffect(() => {
     checkAuth()
@@ -167,6 +170,11 @@ export default function StylistDashboard() {
     if (!confirm('Reject this booking? This cannot be undone.')) return
     await updateBookingStatus(bookingId, 'cancelled')
   }
+
+  const cancelConfirmedBooking = (booking: any) => {
+  setBookingToCancel(booking)
+  setCancellationModalOpen(true)
+}
 
   const pendingBookings = bookings.filter(b => b.status === 'pending')
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')

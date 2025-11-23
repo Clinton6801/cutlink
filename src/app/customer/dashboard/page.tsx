@@ -455,7 +455,23 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
         />
       )}
 
-      
+       {/* Cancellation Modal */}
+      {cancellationModalOpen && bookingToCancel && (
+        <CancellationModal
+          bookingId={bookingToCancel.id}
+          userType="customer"
+          onClose={() => {
+            setCancellationModalOpen(false)
+            setBookingToCancel(null)
+          }}
+          onSuccess={() => {
+            setCancellationModalOpen(false)
+            setBookingToCancel(null)
+            alert('Booking cancelled successfully')
+            if (user) fetchBookings(user.id)
+          }}
+        />
+      )}
     </main>
   )
 }                                                                                                                                                                                                                                                                                               
