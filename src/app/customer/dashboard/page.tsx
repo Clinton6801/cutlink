@@ -404,9 +404,15 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
                                >
                                 💬 Message
                                 </Link>
-                 {booking.status === 'pending' && (
+                 
+ {(booking.status === 'pending' || booking.status === 'confirmed') && (
   <button
-    onClick={() => cancelBooking(booking)}
+    onClick={() => {
+      if (booking.status === 'confirmed') {
+        if (!confirm('This booking is already confirmed. Are you sure you want to cancel?')) return
+      }
+      cancelBooking(booking)
+    }}
     className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
   >
     Cancel
