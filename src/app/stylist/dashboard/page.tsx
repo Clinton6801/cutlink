@@ -521,13 +521,22 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
                     </>
                   )}
                   {booking.status === 'confirmed' && (
-                    <button
+                    <>
+                   <button
                       onClick={() => completeBooking(booking.id)}
                       className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
                     >
                       Mark Complete
                     </button>
-                  )}
+                
+                   <button
+        onClick={() => cancelConfirmedBooking(booking)}
+        className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
+      >
+        Cancel
+      </button>
+                      </>
+          )}
                   <Link 
                   href={`/messages/${booking.customer_id}`}
                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm block text-center">
