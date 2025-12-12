@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
+import { sendEmail } from '../../../lib/SendEmail'
+import { emailTemplates } from '../../../lib/emailTemplates'
 import Link from 'next/link'
 
 interface StylistInfo {
