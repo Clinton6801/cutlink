@@ -144,7 +144,7 @@ if (data) {
       // Send email to stylist
       const emailContent = emailTemplates.newBooking(
         stylistProfile?.full_name || 'Stylist',
-        profile?.full_name || 'Customer',
+        currentUser?.user_metadata?.full_name || 'Customer',
         new Date(bookingData.appointmentDate).toLocaleDateString(),
         bookingData.appointmentTime,
         bookingData.location,
