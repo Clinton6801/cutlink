@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
-import { sendEmail } from '../../../lib/SendEmail'
+import { sendEmail } from '../../../lib/sendEmail'
 import { emailTemplates } from '../../../lib/emailTemplates'
 import Link from 'next/link'
 
@@ -99,38 +99,38 @@ if (data) {
     }
   }
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setSubmitting(true)
-  setError('')
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError('')
 
-  try {
-    if (!currentUser) {
-      throw new Error('You must be logged in to book')
-    }
+    try {
+      if (!currentUser) {
+        throw new Error('You must be logged in to book')
+      }
 
-    // Create booking in database
-    const { data: bookingData, error: bookingError } = await supabase
-      .from('bookings')
-      .insert([
-        {
-          customer_id: currentUser.id,
-          stylist_id: stylistId,
-          service_type: bookingData.serviceType,
-          appointment_date: bookingData.appointmentDate,
-          appointment_time: bookingData.appointmentTime,
-          location: bookingData.location,
-          service_description: bookingData.serviceDescription,
-          price: parseInt(bookingData.estimatedPrice),
-          status: 'pending',
-          payment_status: 'pending'
-        }
-      ])
-      .select()
+      // Create booking in database
+      const { data, error: bookingError } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            customer_id: currentUser.id,
+            stylist_id: stylistId,
+            service_type: bookingData.serviceType,
+            appointment_date: bookingData.appointmentDate,
+            appointment_time: bookingData.appointmentTime,
+            location: bookingData.location,
+            service_description: bookingData.serviceDescription,
+            price: parseInt(bookingData.estimatedPrice),
+            status: 'pending',
+            payment_status: 'pending'
+          }
+        ])
+        .select()
 
-    if (bookingError) throw bookingError
+      if (bookingError) throw bookingError
 
-    // ← ADD EMAIL SENDING HERE
+        // ← ADD EMAIL SENDING HERE
     // Get stylist email
     const { data: stylistProfile } = await supabase
       .from('profiles')
@@ -158,16 +158,6 @@ if (data) {
         // Don't fail the booking if email fails
       }
     }
-
-    // Success! Redirect to customer dashboard
-    alert('Booking request sent successfully! The stylist will be notified.')
-    router.push('/customer/dashboard')
-  } catch (error: any) {
-    setError(error.message)
-  } finally {
-    setSubmitting(false)
-  }
-}
 
       // Success! Redirect to customer dashboard
       alert('Booking request sent successfully! The stylist will confirm shortly.')
