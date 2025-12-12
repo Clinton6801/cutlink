@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ReviewModal from '../../../components/ReviewModal'
+import CancellationModal from '../../../components/CancellationModal' // ← ADD THIS
 
 interface Booking {
   id: string
@@ -36,6 +37,8 @@ export default function CustomerDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
   const [reviewModalOpen, setReviewModalOpen] = useState(false) 
   const [selectedBooking, setSelectedBooking] = useState<any>(null)
+  const [cancellationModalOpen, setCancellationModalOpen] = useState(false)
+const [bookingToCancel, setBookingToCancel] = useState<any>(null)
 
   useEffect(() => {
     checkAuth()
@@ -113,24 +116,10 @@ export default function CustomerDashboard() {
     router.push('/')
   }
 
-  const cancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId)
-
-      if (error) throw error
-
-      alert('Booking cancelled successfully')
-      if (user) fetchBookings(user.id)
-    } catch (error: any) {
-      alert('Error cancelling booking: ' + error.message)
-    }
-  }
-
+ const cancelBooking = (booking: any) => {
+  setBookingToCancel(booking)
+  setCancellationModalOpen(true)
+}
   const openReviewModal = (booking: any) => {
   setSelectedBooking(booking)
   setReviewModalOpen(true)
@@ -415,14 +404,20 @@ export default function CustomerDashboard() {
                                >
                                 💬 Message
                                 </Link>
-                  {booking.status === 'pending' && (
-                    <button
-                      onClick={() => cancelBooking(booking.id)}
-                      className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                 
+ {(booking.status === 'pending' || booking.status === 'confirmed') && (
+  <button
+    onClick={() => {
+      if (booking.status === 'confirmed') {
+        if (!confirm('This booking is already confirmed. Are you sure you want to cancel?')) return
+      }
+      cancelBooking(booking)
+    }}
+    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
+  >
+    Cancel
+  </button>
+)}
                  {booking.status === 'completed' && (
   <button 
     onClick={() => openReviewModal(booking)}
@@ -462,6 +457,24 @@ export default function CustomerDashboard() {
             setSelectedBooking(null)
             alert('Thank you for your review!')
             fetchBookings(user.id)
+          }}
+        />
+      )}
+
+       {/* Cancellation Modal */}
+      {cancellationModalOpen && bookingToCancel && (
+        <CancellationModal
+          bookingId={bookingToCancel.id}
+          userType="customer"
+          onClose={() => {
+            setCancellationModalOpen(false)
+            setBookingToCancel(null)
+          }}
+          onSuccess={() => {
+            setCancellationModalOpen(false)
+            setBookingToCancel(null)
+            alert('Booking cancelled successfully')
+            if (user) fetchBookings(user.id)
           }}
         />
       )}

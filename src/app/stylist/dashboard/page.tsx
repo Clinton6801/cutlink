@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import CancellationModal from '../../../components/CancellationModal' // ← ADD THIS
 
 interface Booking {
   id: string
@@ -43,6 +44,8 @@ export default function StylistDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'completed'>('pending')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
+  const [cancellationModalOpen, setCancellationModalOpen] = useState(false)
+const [bookingToCancel, setBookingToCancel] = useState<any>(null) 
 
   useEffect(() => {
     checkAuth()
@@ -167,6 +170,11 @@ export default function StylistDashboard() {
     if (!confirm('Reject this booking? This cannot be undone.')) return
     await updateBookingStatus(bookingId, 'cancelled')
   }
+
+  const cancelConfirmedBooking = (booking: any) => {
+  setBookingToCancel(booking)
+  setCancellationModalOpen(true)
+}
 
   const pendingBookings = bookings.filter(b => b.status === 'pending')
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
@@ -513,13 +521,22 @@ export default function StylistDashboard() {
                     </>
                   )}
                   {booking.status === 'confirmed' && (
-                    <button
+                    <>
+                   <button
                       onClick={() => completeBooking(booking.id)}
                       className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
                     >
                       Mark Complete
                     </button>
-                  )}
+                
+                   <button
+        onClick={() => cancelConfirmedBooking(booking)}
+        className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
+      >
+        Cancel
+      </button>
+                      </>
+          )}
                   <Link 
                   href={`/messages/${booking.customer_id}`}
                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm block text-center">
@@ -539,6 +556,24 @@ export default function StylistDashboard() {
           ))}
         </div>
       </div>
+
+       {/* ← IS THIS MODAL HERE? */}
+      {cancellationModalOpen && bookingToCancel && (
+        <CancellationModal
+          bookingId={bookingToCancel.id}
+          userType="stylist"
+          onClose={() => {
+            setCancellationModalOpen(false)
+            setBookingToCancel(null)
+          }}
+          onSuccess={() => {
+            setCancellationModalOpen(false)
+            setBookingToCancel(null)
+            alert('Booking cancelled')
+            if (user) fetchBookings(user.id)
+          }}
+        />
+      )}
     </main>
   )
 }
