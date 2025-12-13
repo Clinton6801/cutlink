@@ -601,6 +601,7 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
         <CancellationModal
           bookingId={bookingToCancel.id}
           userType="stylist"
+           bookingDetails={bookingToCancel}
           onClose={() => {
             setCancellationModalOpen(false)
             setBookingToCancel(null)
