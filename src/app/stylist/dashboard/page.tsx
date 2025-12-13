@@ -158,11 +158,45 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
     }
   }
 
-  const completeBooking = async (bookingId: string) => {
-    if (!confirm('Mark this booking as completed?')) return
+ const completeBooking = async (bookingId: string) => {
+  if (!confirm('Mark this booking as completed?')) return
+  
+  try {
+    // Update booking status
     await updateBookingStatus(bookingId, 'completed')
-  }
+    
+    // ← ADD EMAIL SENDING HERE
+    // Get booking details
+    const booking = bookings.find(b => b.id === bookingId)
+    if (booking) {
+      // Get customer email
+      const emailResponse = await fetch('/api/get-user-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: booking.customer_id })
+      })
 
+      const { email: customerEmail } = await emailResponse.json()
+
+      if (customerEmail) {
+        // Send review request email to customer
+        const emailContent = emailTemplates.requestReview(
+          booking.customer?.profiles?.full_name || 'Customer',
+          profile?.full_name || 'Stylist',
+          bookingId
+        )
+
+        try {
+          await sendEmail(customerEmail, emailContent.subject, emailContent.html)
+        } catch (emailError) {
+          console.error('Failed to send review request email:', emailError)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error completing booking:', error)
+  }
+}
  const confirmBooking = async (bookingId: string) => {
   if (!confirm('Confirm this booking?')) return
   
