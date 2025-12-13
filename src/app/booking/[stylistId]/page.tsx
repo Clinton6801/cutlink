@@ -131,34 +131,39 @@ if (data) {
       if (bookingError) throw bookingError
 
         // ← ADD EMAIL SENDING HERE
-    // Get stylist email
-    const { data: stylistProfile } = await supabase
-      .from('profiles')
-      .select('full_name, id')
-      .eq('id', stylistId)
-      .single()
+// Get stylist email via API
+const emailResponse = await fetch('/api/get-user-email', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ userId: stylistId })
+})
 
-    const { data: stylistAuth } = await supabase.auth.admin.getUserById(stylistId)
+const { email: stylistEmail } = await emailResponse.json()
 
-    if (stylistAuth?.user?.email) {
-      // Send email to stylist
-      const emailContent = emailTemplates.newBooking(
-        stylistProfile?.full_name || 'Stylist',
-        currentUser?.user_metadata?.full_name || 'Customer',
-        new Date(bookingData.appointmentDate).toLocaleDateString(),
-        bookingData.appointmentTime,
-        bookingData.location,
-        parseInt(bookingData.estimatedPrice)
-      )
+if (stylistEmail) {
+  // Get current user's name
+  const { data: customerProfile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', currentUser.id)
+    .single()
 
-      try {
-        await sendEmail(stylistAuth.user.email, emailContent.subject, emailContent.html)
-      } catch (emailError) {
-        console.error('Failed to send email:', emailError)
-        // Don't fail the booking if email fails
-      }
-    }
+  // Send email to stylist
+  const emailContent = emailTemplates.newBooking(
+    stylist?.profiles?.full_name || 'Stylist',
+    customerProfile?.full_name || 'Customer',
+    new Date(bookingData.appointmentDate).toLocaleDateString(),
+    bookingData.appointmentTime,
+    bookingData.location,
+    parseInt(bookingData.estimatedPrice)
+  )
 
+  try {
+    await sendEmail(stylistEmail, emailContent.subject, emailContent.html)
+  } catch (emailError) {
+    console.error('Failed to send email:', emailError)
+  }
+}
       // Success! Redirect to customer dashboard
       alert('Booking request sent successfully! The stylist will confirm shortly.')
       router.push('/customer/dashboard')
