@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { sendEmail } from '../lib/sendEmail' 
+import { emailTemplates } from '../lib/emailTemplates' 
 
 interface CancellationModalProps {
   bookingId: string
   userType: 'customer' | 'stylist'
+  bookingDetails?: any 
   onClose: () => void
   onSuccess: () => void
 }
@@ -13,6 +16,7 @@ interface CancellationModalProps {
 export default function CancellationModal({
   bookingId,
   userType,
+  bookingDetails,
   onClose,
   onSuccess
 }: CancellationModalProps) {
@@ -38,27 +42,20 @@ export default function CancellationModal({
         'Other'
       ]
 
-  const handleCancel = async (e: React.FormEvent) => {
+ const handleCancel = async (e: React.FormEvent) => {
   e.preventDefault()
-  console.log('=== FORM SUBMITTED ===') // ← DEBUG
-  console.log('Booking ID:', bookingId) // ← DEBUG
-  console.log('Reason:', reason) // ← DEBUG
-  console.log('User Type:', userType) // ← DEBUG
-  
   setSubmitting(true)
   setError('')
 
   if (!reason) {
-    console.log('No reason selected!') // ← DEBUG
     setError('Please select a reason for cancellation')
     setSubmitting(false)
     return
   }
 
   try {
-    console.log('Attempting to update booking...') // ← DEBUG
-    
-    const { error: updateError, data } = await supabase
+    // Update booking status
+    const { error: updateError } = await supabase
       .from('bookings')
       .update({
         status: 'cancelled',
@@ -68,17 +65,48 @@ export default function CancellationModal({
       })
       .eq('id', bookingId)
 
-    console.log('Update response:', { data, updateError }) // ← DEBUG
+    if (updateError) throw updateError
 
-    if (updateError) {
-      console.error('Update error:', updateError) // ← DEBUG
-      throw updateError
+    // ← ADD EMAIL SENDING HERE
+    if (bookingDetails) {
+      // Determine who to send email to (the other party)
+      const recipientId = userType === 'customer' 
+        ? bookingDetails.stylist_id 
+        : bookingDetails.customer_id
+
+      const recipientName = userType === 'customer'
+        ? bookingDetails.stylist?.profiles?.full_name || 'Stylist'
+        : bookingDetails.customer?.profiles?.full_name || 'Customer'
+
+      // Get recipient email
+      const emailResponse = await fetch('/api/get-user-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: recipientId })
+      })
+
+      const { email: recipientEmail } = await emailResponse.json()
+
+      if (recipientEmail) {
+        // Send cancellation email
+        const emailContent = emailTemplates.bookingCancelled(
+          recipientName,
+          userType,
+          reason,
+          new Date(bookingDetails.appointment_date).toLocaleDateString(),
+          bookingDetails.appointment_time
+        )
+
+        try {
+          await sendEmail(recipientEmail, emailContent.subject, emailContent.html)
+        } catch (emailError) {
+          console.error('Failed to send cancellation email:', emailError)
+        }
+      }
     }
 
-    console.log('Success! Calling onSuccess()') // ← DEBUG
     onSuccess()
   } catch (error: any) {
-    console.error('Caught error:', error) // ← DEBUG
     setError(error.message)
   } finally {
     setSubmitting(false)
