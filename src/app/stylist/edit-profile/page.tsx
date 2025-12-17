@@ -471,6 +471,21 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
 
+          {/* Working Hours */}
+<div>
+  <label className="block text-sm font-medium text-gray-300 mb-3">
+    Working Hours
+  </label>
+  <p className="text-sm text-gray-400 mb-4">
+    Set your available days and hours. Customers can only book during these times.
+  </p>
+  <WorkingHoursSettings
+    initialHours={workingHours}
+    onChange={setWorkingHours}
+  />
+</div>
+
+
           {/* Portfolio Images */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">
