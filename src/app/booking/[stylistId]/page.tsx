@@ -17,6 +17,13 @@ interface StylistInfo {
     full_name: string
     avatar_url: string
   }
+  working_hours: {
+    [day: string]: {
+      enabled: boolean
+      start: string
+      end: string
+    }
+  }
 }
 
 export default function BookingPage() {
