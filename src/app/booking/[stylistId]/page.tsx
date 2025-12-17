@@ -391,43 +391,59 @@ if (stylistEmail) {
                   </div>
                 </div>
 
-                {/* Date */}
-                <div>
-                  <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">
-                    Appointment Date *
-                  </label>
-                  <input
-                    id="date"
-                    type="date"
-                    required
-                    min={minDate}
-                    value={bookingData.appointmentDate}
-                    onChange={(e) => setBookingData({ ...bookingData, appointmentDate: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
-                  />
-                </div>
+               {/* Date */}
+<div>
+  <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">
+    Appointment Date *
+  </label>
+  <input
+    id="date"
+    type="date"
+    required
+    min={minDate}
+    value={bookingData.appointmentDate}
+    onChange={(e) => {
+      setBookingData({ ...bookingData, appointmentDate: e.target.value, appointmentTime: '' })
+      if (stylist?.working_hours) {
+        generateAvailableSlots(e.target.value, stylist.working_hours)
+      }
+    }}
+    className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+  />
+</div>
 
-                {/* Time */}
-                <div>
-                  <label htmlFor="time" className="block text-sm font-medium text-gray-300 mb-2">
-                    Appointment Time *
-                  </label>
-                  <select
-                    id="time"
-                    required
-                    value={bookingData.appointmentTime}
-                    onChange={(e) => setBookingData({ ...bookingData, appointmentTime: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
-                  >
-                    <option value="">Select a time</option>
-                    {timeSlots.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+{/* Time */}
+<div>
+  <label htmlFor="time" className="block text-sm font-medium text-gray-300 mb-2">
+    Appointment Time *
+  </label>
+  {bookingData.appointmentDate ? (
+    availableSlots.length > 0 ? (
+      <select
+        id="time"
+        required
+        value={bookingData.appointmentTime}
+        onChange={(e) => setBookingData({ ...bookingData, appointmentTime: e.target.value })}
+        className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+      >
+        <option value="">Select a time</option>
+        {availableSlots.map((time) => (
+          <option key={time} value={time}>
+            {time}
+          </option>
+        ))}
+      </select>
+    ) : (
+      <div className="w-full px-4 py-3 bg-red-500/10 border border-red-500 rounded-lg text-red-500 text-center">
+        No available slots for this date. Stylist is not working or fully booked.
+      </div>
+    )
+  ) : (
+    <div className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-500 text-center">
+      Please select a date first
+    </div>
+  )}
+</div>
                 {/* Location */}
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-2">
