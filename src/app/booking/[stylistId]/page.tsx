@@ -29,6 +29,7 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
 
   const [bookingData, setBookingData] = useState({
     serviceType: '',
@@ -54,51 +55,98 @@ export default function BookingPage() {
     }
   }
 
-  const fetchStylistInfo = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('stylist_profiles')
-        .select(`
-          user_id,
-          service_type,
-          price_range_min,
-          price_range_max,
-          shop_address,
-          profiles (
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('user_id', stylistId)
-        .single()
+  // ← ADD THIS ENTIRE FUNCTION
+const generateAvailableSlots = async (date: string, workingHours: any) => {
+  if (!date) {
+    setAvailableSlots([])
+    return
+  }
 
-      if (error) throw error
-     if (error) throw error
+  const selectedDate = new Date(date)
+  const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+  
+  // Check if stylist works on this day
+  if (!workingHours[dayName]?.enabled) {
+    setAvailableSlots([])
+    return
+  }
 
-// TypeScript fix: handle profiles properly
-if (data) {
-  setStylist({
-    ...data,
-    profiles: data.profiles as any
-  })
-}
+  const { start, end } = workingHours[dayName]
+  
+  // Get existing bookings for this date
+  const { data: existingBookings } = await supabase
+    .from('bookings')
+    .select('appointment_time')
+    .eq('stylist_id', stylistId)
+    .eq('appointment_date', date)
+    .in('status', ['pending', 'confirmed'])
 
-      // Pre-fill location if shop service
-      if (data.service_type === 'shop') {
-        setBookingData(prev => ({
-          ...prev,
-          serviceType: 'shop',
-          location: data.shop_address
-        }))
-      }
-    } catch (error) {
-      console.error('Error fetching stylist:', error)
-    } finally {
-      setLoading(false)
+  const bookedTimes = existingBookings?.map(b => b.appointment_time) || []
+
+  // Generate slots between start and end time
+  const slots: string[] = []
+  const [startHour, startMin] = start.split(':').map(Number)
+  const [endHour, endMin] = end.split(':').map(Number)
+
+  let currentHour = startHour
+  let currentMin = startMin
+
+  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+    const timeSlot = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`
+    
+    // Only add if not already booked
+    if (!bookedTimes.includes(timeSlot)) {
+      slots.push(timeSlot)
+    }
+
+    // Increment by 30 minutes
+    currentMin += 30
+    if (currentMin >= 60) {
+      currentMin = 0
+      currentHour++
     }
   }
 
+  setAvailableSlots(slots)
+}
+
+  const fetchStylistInfo = async () => {
+  try {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('stylist_profiles')
+      .select(`
+        user_id,
+        service_type,
+        price_range_min,
+        price_range_max,
+        shop_address,
+        working_hours,
+        profiles (
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('user_id', stylistId)
+      .single()
+
+    if (error) throw error
+    setStylist(data as any)
+
+    // Pre-fill location if shop service
+    if (data.service_type === 'shop') {
+      setBookingData(prev => ({
+        ...prev,
+        serviceType: 'shop',
+        location: data.shop_address
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching stylist:', error)
+  } finally {
+    setLoading(false)
+  }
+}
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
