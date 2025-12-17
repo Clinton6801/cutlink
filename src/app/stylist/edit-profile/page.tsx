@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '../../../components/ImageUpload'
+import WorkingHoursSettings from '../../../components/WorkingHoursSettings'
 
 export default function EditStylistProfile() {
   const router = useRouter()
@@ -25,6 +26,16 @@ export default function EditStylistProfile() {
     priceRangeMin: 0,
     priceRangeMax: 0,
   })
+
+  const [workingHours, setWorkingHours] = useState<any>({ // ← ADD THIS
+  monday: { enabled: true, start: '09:00', end: '18:00' },
+  tuesday: { enabled: true, start: '09:00', end: '18:00' },
+  wednesday: { enabled: true, start: '09:00', end: '18:00' },
+  thursday: { enabled: true, start: '09:00', end: '18:00' },
+  friday: { enabled: true, start: '09:00', end: '18:00' },
+  saturday: { enabled: true, start: '09:00', end: '18:00' },
+  sunday: { enabled: false, start: '09:00', end: '18:00' },
+})
 
   const specialtyOptions = [
     'Fade', 'Buzz Cut', 'Afro', 'Dreadlocks', 'Braids',
@@ -67,6 +78,7 @@ export default function EditStylistProfile() {
           priceRangeMax: stylistData.price_range_max || 0,
         })
         setPortfolioImages(stylistData.portfolio_images || [])
+        setWorkingHours(stylistData.working_hours || workingHours)
       }
 
       // Get user profile for avatar
@@ -198,6 +210,7 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
           price_range_min: formData.priceRangeMin,
           price_range_max: formData.priceRangeMax,
           portfolio_images: portfolioImages,
+          working_hours: workingHours,
         })
         .eq('user_id', user.id)
 
