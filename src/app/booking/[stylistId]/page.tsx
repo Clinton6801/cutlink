@@ -46,7 +46,7 @@ export default function BookingPage() {
     appointmentTime: '',
     location: '',
     serviceDescription: '',
-    estimatedPrice: ''
+    estimatedPrice: '',
     serviceId: '', // ← ADD THIS
     serviceName: '', // ← ADD THIS
     serviceDuration: 0 // ← ADD THIS
@@ -195,6 +195,9 @@ const generateAvailableSlots = async (date: string, workingHours: any) => {
             customer_id: currentUser.id,
             stylist_id: stylistId,
             service_type: bookingData.serviceType,
+           service_id: bookingData.serviceId || null, // ← ADD THIS
+            service_name: bookingData.serviceName || null, // ← ADD THIS
+            service_duration: bookingData.serviceDuration || null, 
             appointment_date: bookingData.appointmentDate,
             appointment_time: bookingData.appointmentTime,
             location: bookingData.location,
