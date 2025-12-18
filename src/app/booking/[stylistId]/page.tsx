@@ -47,6 +47,9 @@ export default function BookingPage() {
     location: '',
     serviceDescription: '',
     estimatedPrice: ''
+    serviceId: '', // ← ADD THIS
+    serviceName: '', // ← ADD THIS
+    serviceDuration: 0 // ← ADD THIS
   })
 
   useEffect(() => {
@@ -417,7 +420,61 @@ if (stylistEmail) {
                     )}
                   </div>
                 </div>
-
+                     {/* ← ADD SERVICE SELECTION HERE */}
+{/* Select Service */}
+{services.length > 0 && (
+  <div>
+    <label className="block text-sm font-medium text-gray-300 mb-3">
+      Select Service *
+    </label>
+    <div className="space-y-3">
+      {services.map((service) => (
+        <label
+          key={service.id}
+          className={`block p-4 rounded-lg border-2 cursor-pointer transition ${
+            selectedService?.id === service.id
+              ? 'border-yellow-500 bg-yellow-500/10'
+              : 'border-gray-700 bg-black hover:border-gray-600'
+          }`}
+        >
+          <input
+            type="radio"
+            name="service"
+            value={service.id}
+            checked={selectedService?.id === service.id}
+            onChange={() => {
+              setSelectedService(service)
+              setBookingData({
+                ...bookingData,
+                estimatedPrice: service.price.toString(),
+                serviceId: service.id,
+                serviceName: service.name,
+                serviceDuration: service.duration
+              })
+            }}
+            className="sr-only"
+          />
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="font-bold text-white mb-1">{service.name}</div>
+              {service.description && (
+                <div className="text-sm text-gray-400 mb-2">{service.description}</div>
+              )}
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-yellow-500 font-bold">₦{service.price.toLocaleString()}</span>
+                <span className="text-gray-500">•</span>
+                <span className="text-gray-400">{service.duration} mins</span>
+              </div>
+            </div>
+            {selectedService?.id === service.id && (
+              <div className="text-yellow-500 text-xl">✓</div>
+            )}
+          </div>
+        </label>
+      ))}
+    </div>
+  </div>
+)}
                {/* Date */}
 <div>
   <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">
@@ -508,27 +565,36 @@ if (stylistEmail) {
                   />
                 </div>
 
-                {/* Estimated Price */}
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-2">
-                    Estimated Price (₦) *
-                  </label>
-                  <input
-                    id="price"
-                    type="number"
-                    required
-                    min={stylist.price_range_min}
-                    max={stylist.price_range_max}
-                    value={bookingData.estimatedPrice}
-                    onChange={(e) => setBookingData({ ...bookingData, estimatedPrice: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
-                    placeholder={`${stylist.price_range_min} - ${stylist.price_range_max}`}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Price range: ₦{stylist.price_range_min.toLocaleString()} - ₦{stylist.price_range_max.toLocaleString()}
-                  </p>
-                </div>
-
+              {/* Estimated Price */}
+<div>
+  <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-2">
+    Price (₦) *
+  </label>
+  <input
+    id="price"
+    type="number"
+    required
+    min={stylist.price_range_min}
+    max={stylist.price_range_max}
+    value={bookingData.estimatedPrice}
+    onChange={(e) => setBookingData({ ...bookingData, estimatedPrice: e.target.value })}
+    readOnly={selectedService !== null} // ← ADD THIS
+    className={`w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none ${
+      selectedService ? 'opacity-60 cursor-not-allowed' : '' // ← ADD THIS
+    }`}
+    placeholder={`${stylist.price_range_min} - ${stylist.price_range_max}`}
+  />
+  {selectedService && (
+    <p className="text-xs text-gray-400 mt-1">
+      Price is fixed for the selected service
+    </p>
+  )}
+  {!selectedService && (
+    <p className="text-xs text-gray-400 mt-1">
+      Price range: ₦{stylist.price_range_min.toLocaleString()} - ₦{stylist.price_range_max.toLocaleString()}
+    </p>
+  )}
+</div>
                 {/* Error Message */}
                 {error && (
                   <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg">
