@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '../../../components/ImageUpload'
 import WorkingHoursSettings from '../../../components/WorkingHoursSettings'
+import ServiceManager from '../../../components/ServiceManager'
 
 export default function EditStylistProfile() {
   const router = useRouter()
@@ -483,6 +484,17 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     initialHours={workingHours}
     onChange={setWorkingHours}
   />
+</div>
+
+{/* Services Menu */}
+<div>
+  <label className="block text-sm font-medium text-gray-300 mb-3">
+    Services & Pricing
+  </label>
+  <p className="text-sm text-gray-400 mb-4">
+    Create a menu of services you offer with individual prices. Customers will choose from this menu when booking.
+  </p>
+  <ServiceManager stylistId={user?.id || ''} />
 </div>
 
 
