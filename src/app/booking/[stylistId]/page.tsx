@@ -64,6 +64,23 @@ export default function BookingPage() {
     }
   }
 
+  // ← ADD THIS FUNCTION
+const fetchServices = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('stylist_id', stylistId)
+      .eq('is_active', true)
+      .order('price', { ascending: true })
+
+    if (error) throw error
+    setServices(data || [])
+  } catch (error) {
+    console.error('Error fetching services:', error)
+  }
+}
+
   // ← ADD THIS ENTIRE FUNCTION
 const generateAvailableSlots = async (date: string, workingHours: any) => {
   if (!date) {
