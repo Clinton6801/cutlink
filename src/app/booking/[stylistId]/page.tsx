@@ -52,6 +52,7 @@ export default function BookingPage() {
   useEffect(() => {
     checkUser()
     fetchStylistInfo()
+    fetchServices()
   }, [stylistId])
 
   const checkUser = async () => {
