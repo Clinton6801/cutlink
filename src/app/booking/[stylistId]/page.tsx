@@ -37,6 +37,8 @@ export default function BookingPage() {
   const [error, setError] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [services, setServices] = useState<any[]>([]) // ← ADD THIS
+  const [selectedService, setSelectedService] = useState<any>(null)
 
   const [bookingData, setBookingData] = useState({
     serviceType: '',
