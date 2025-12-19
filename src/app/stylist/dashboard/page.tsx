@@ -193,6 +193,15 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
           console.error('Failed to send review request email:', emailError)
         }
       }
+        // ← ADD NOTIFICATION HERE
+// Create notification for customer
+await createNotification(
+  booking.customer_id,
+  'booking_completed',
+  'Booking Completed! 🎉',
+  `How was your experience with ${profile?.full_name}? Leave a review!`,
+  '/customer/dashboard'
+)
     }
   } catch (error) {
     console.error('Error completing booking:', error)
