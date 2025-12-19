@@ -355,6 +355,22 @@ const toggleFavorite = async () => {
                   Book Now
                 </button>
 
+                {/* ← ADD FAVORITE BUTTON HERE */}
+{/* Favorite Button */}
+{currentUser && (
+  <button
+    onClick={toggleFavorite}
+    disabled={favoriteLoading}
+    className={`w-full font-bold py-3 px-6 rounded-lg transition mb-3 ${
+      isFavorite
+        ? 'bg-red-500/20 text-red-500 border-2 border-red-500 hover:bg-red-500/30'
+        : 'bg-gray-700 text-white border-2 border-gray-700 hover:bg-gray-600'
+    }`}
+  >
+    {favoriteLoading ? '...' : isFavorite ? '❤️ Saved' : '🤍 Save Stylist'}
+  </button>
+)}
+
                 {/* Contact Button */}
                 <Link
                     href={`/messages/${stylistId}`}
