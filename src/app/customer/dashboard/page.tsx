@@ -5,7 +5,8 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ReviewModal from '../../../components/ReviewModal'
-import CancellationModal from '../../../components/CancellationModal' // ← ADD THIS
+import CancellationModal from '../../../components/CancellationModal'
+import NotificationBell from '../../../components/NotificationBell'
 
 interface Booking {
   id: string
@@ -177,6 +178,7 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
         </h1>
       </Link>
       <div className="flex items-center gap-6">
+         {user && <NotificationBell userId={user.id} />} 
         <Link
           href="/messages"
           className="text-gray-300 hover:text-yellow-500 transition font-medium"

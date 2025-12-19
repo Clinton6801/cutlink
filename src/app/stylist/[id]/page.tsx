@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
+import NotificationBell from '../../../components/NotificationBell'
 
 interface StylistProfile {
   id: string
