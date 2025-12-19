@@ -47,6 +47,8 @@ export default function StylistProfile() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'about' | 'reviews'>('about')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [isFavorite, setIsFavorite] = useState(false) 
+  const [favoriteLoading, setFavoriteLoading] = useState(false) 
 
   useEffect(() => {
      checkCurrentUser() 
