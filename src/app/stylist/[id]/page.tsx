@@ -129,6 +129,50 @@ const checkCurrentUser = async () => {
       console.error('Error fetching reviews:', error)
     }
   }
+  
+
+  // ← ADD THIS FUNCTION
+const toggleFavorite = async () => {
+  if (!currentUser) {
+    alert('Please login to save favorites')
+    router.push('/login')
+    return
+  }
+
+  setFavoriteLoading(true)
+
+  try {
+    if (isFavorite) {
+      // Remove from favorites
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('customer_id', currentUser.id)
+        .eq('stylist_id', stylistId)
+
+      if (error) throw error
+      setIsFavorite(false)
+    } else {
+      // Add to favorites
+      const { error } = await supabase
+        .from('favorites')
+        .insert([
+          {
+            customer_id: currentUser.id,
+            stylist_id: stylistId
+          }
+        ])
+
+      if (error) throw error
+      setIsFavorite(true)
+    }
+  } catch (error: any) {
+    alert('Error: ' + error.message)
+  } finally {
+    setFavoriteLoading(false)
+  }
+}
+
 
   const handleBookNow = () => {
     // For now, we'll just redirect to a booking page (we'll build this later)
