@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { sendEmail } from '../lib/sendEmail' 
 import { emailTemplates } from '../lib/emailTemplates' 
+import { createNotification } from '../lib/createNotification'
 
 interface CancellationModalProps {
   bookingId: string
@@ -97,12 +98,23 @@ export default function CancellationModal({
           bookingDetails.appointment_time
         )
 
-        try {
-          await sendEmail(recipientEmail, emailContent.subject, emailContent.html)
-        } catch (emailError) {
-          console.error('Failed to send cancellation email:', emailError)
-        }
-      }
+        // Send cancellation email
+try {
+  await sendEmail(recipientEmail, emailContent.subject, emailContent.html)
+} catch (emailError) {
+  console.error('Failed to send cancellation email:', emailError)
+}
+
+// ← ADD NOTIFICATION HERE
+// Create notification for the other party
+await createNotification(
+  recipientId,
+  'booking_cancelled',
+  'Booking Cancelled',
+  `Your booking for ${new Date(bookingDetails.appointment_date).toLocaleDateString()} has been cancelled. Reason: ${reason}`,
+  userType === 'customer' ? '/stylist/dashboard' : '/customer/dashboard'
+)
+}
     }
 
     onSuccess()
