@@ -244,6 +244,7 @@ const toggleFavorite = async () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Stylist Info Card */}
           <div className="lg:col-span-1">
+            {currentUser && <NotificationBell userId={currentUser.id} />} 
             <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl overflow-hidden sticky top-24">
               {/* Avatar */}
               <div className="h-64 bg-gradient-to-br from-yellow-500/20 to-gray-800 flex items-center justify-center">
