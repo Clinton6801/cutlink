@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { createNotification } from '../lib/createNotification'
 
 interface Message {
   id: string
@@ -112,6 +113,16 @@ export default function MessageThread({
         ])
 
       if (error) throw error
+
+      // ← ADD NOTIFICATION HERE
+// Create notification for receiver
+await createNotification(
+  otherUserId,
+  'new_message',
+  'New Message 💬',
+  newMessage.trim().substring(0, 100) + (newMessage.length > 100 ? '...' : ''),
+  `/messages/${currentUserId}`
+)
 
       setNewMessage('')
       fetchMessages()
