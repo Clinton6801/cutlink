@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import { sendEmail } from '../../../lib/sendEmail'
 import { emailTemplates } from '../../../lib/emailTemplates'
+import { createNotification } from '../../../lib/createNotification'
 import Link from 'next/link'
 
 interface StylistInfo {
@@ -244,6 +245,17 @@ if (stylistEmail) {
   } catch (emailError) {
     console.error('Failed to send email:', emailError)
   }
+
+  // ← ADD NOTIFICATION HERE
+// Create notification for stylist
+await createNotification(
+  stylistId,
+  'new_booking',
+  'New Booking Request!',
+  `${customerProfile?.full_name || 'A customer'} wants to book you for ${new Date(bookingData.appointmentDate).toLocaleDateString()}`,
+  '/stylist/dashboard'
+)
+
 }
       // Success! Redirect to customer dashboard
       alert('Booking request sent successfully! The stylist will confirm shortly.')
@@ -254,6 +266,8 @@ if (stylistEmail) {
       setSubmitting(false)
     }
   }
+
+  
 
   // Generate time slots (8 AM - 8 PM)
   const timeSlots = []

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import CancellationModal from '../../../components/CancellationModal' 
 import { sendEmail } from '../../../lib/sendEmail'
 import { emailTemplates } from '../../../lib/emailTemplates'
+import { createNotification } from '../../../lib/createNotification'
 
 interface Booking {
   id: string
@@ -233,6 +234,15 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
           console.error('Failed to send confirmation email:', emailError)
         }
       }
+      // ← ADD NOTIFICATION HERE
+// Create notification for customer
+await createNotification(
+  booking.customer_id,
+  'booking_confirmed',
+  'Booking Confirmed! ✅',
+  `${profile?.full_name || 'Your stylist'} confirmed your booking for ${new Date(booking.appointment_date).toLocaleDateString()}`,
+  '/customer/dashboard'
+)
     }
   } catch (error) {
     console.error('Error confirming booking:', error)
