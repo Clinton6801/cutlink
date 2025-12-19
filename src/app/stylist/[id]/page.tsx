@@ -60,6 +60,9 @@ export default function StylistProfile() {
 const checkCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   setCurrentUser(user)
+  if (user) {
+    await checkFavoriteStatus(user.id) // ← ADD THIS
+  }
 }
 
   const fetchStylistData = async () => {
@@ -86,6 +89,22 @@ const checkCurrentUser = async () => {
       setLoading(false)
     }
   }
+
+  const checkFavoriteStatus = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('favorites')
+      .select('id')
+      .eq('customer_id', userId)
+      .eq('stylist_id', stylistId)
+      .single()
+
+    setIsFavorite(!!data)
+  } catch (error) {
+    // Not favorited
+    setIsFavorite(false)
+  }
+}
 
   const fetchReviews = async () => {
     try {
