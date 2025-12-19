@@ -49,52 +49,63 @@ export default function FavoritesPage() {
     }
   }
 
-  const fetchFavorites = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('favorites')
-        .select(`
-          id,
-          stylist_id,
-          stylist:stylist_id (
-            stylist_profiles!inner (
-              rating,
-              total_bookings,
-              price_range_min,
-              price_range_max,
-              location,
-              profiles!stylist_profiles_user_id_fkey (
-                full_name,
-                avatar_url
-              )
-            )
-          )
-        `)
-        .eq('customer_id', userId)
-        .order('created_at', { ascending: false })
+ const fetchFavorites = async (userId: string) => {
+  try {
+    // First, get the favorite records
+    const { data: favoritesData, error: favError } = await supabase
+      .from('favorites')
+      .select('id, stylist_id, created_at')
+      .eq('customer_id', userId)
+      .order('created_at', { ascending: false })
 
-      if (error) throw error
+    if (favError) throw favError
 
-      // Transform the nested data
-      const transformed = data?.map((fav: any) => ({
-        id: fav.id,
-        stylist_id: fav.stylist_id,
-        stylist: {
-          rating: fav.stylist?.stylist_profiles?.[0]?.rating || 0,
-          total_bookings: fav.stylist?.stylist_profiles?.[0]?.total_bookings || 0,
-          price_range_min: fav.stylist?.stylist_profiles?.[0]?.price_range_min || 0,
-          price_range_max: fav.stylist?.stylist_profiles?.[0]?.price_range_max || 0,
-          location: fav.stylist?.stylist_profiles?.[0]?.location || '',
-          profiles: fav.stylist?.stylist_profiles?.[0]?.profiles || { full_name: 'Unknown', avatar_url: null }
-        }
-      }))
-
-      setFavorites(transformed || [])
-    } catch (error) {
-      console.error('Error fetching favorites:', error)
+    if (!favoritesData || favoritesData.length === 0) {
+      setFavorites([])
+      return
     }
-  }
 
+    // Then fetch stylist details for each favorite
+    const favoritesWithDetails = await Promise.all(
+      favoritesData.map(async (fav) => {
+        // Get stylist profile
+        const { data: stylistData } = await supabase
+          .from('stylist_profiles')
+          .select('rating, total_bookings, price_range_min, price_range_max, location')
+          .eq('user_id', fav.stylist_id)
+          .single()
+
+        // Get stylist user profile
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', fav.stylist_id)
+          .single()
+
+        return {
+          id: fav.id,
+          stylist_id: fav.stylist_id,
+          stylist: {
+            rating: stylistData?.rating || 0,
+            total_bookings: stylistData?.total_bookings || 0,
+            price_range_min: stylistData?.price_range_min || 0,
+            price_range_max: stylistData?.price_range_max || 0,
+            location: stylistData?.location || '',
+            profiles: {
+              full_name: userProfile?.full_name || 'Unknown Stylist',
+              avatar_url: userProfile?.avatar_url || null
+            }
+          }
+        }
+      })
+    )
+
+    setFavorites(favoritesWithDetails)
+  } catch (error) {
+    console.error('Error fetching favorites:', error)
+    setFavorites([])
+  }
+}
   const removeFavorite = async (favoriteId: string) => {
     if (!confirm('Remove from favorites?')) return
 
