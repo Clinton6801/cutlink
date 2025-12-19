@@ -189,6 +189,13 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
         >
           Browse Stylists
         </Link>
+      
+  <Link
+    href="/favorites"
+    className="text-gray-300 hover:text-yellow-500 transition font-medium"
+  >
+    ❤️ Favorites
+  </Link>
         <button
           onClick={handleSignOut}
           className="text-gray-300 hover:text-red-500 transition"
