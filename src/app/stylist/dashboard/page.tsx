@@ -166,45 +166,50 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
     // Update booking status
     await updateBookingStatus(bookingId, 'completed')
     
-    // ← ADD EMAIL SENDING HERE
     // Get booking details
     const booking = bookings.find(b => b.id === bookingId)
     if (booking) {
       // Get customer email
-      const emailResponse = await fetch('/api/get-user-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: booking.customer_id })
-      })
+      try { // ← ADD TRY-CATCH
+        const emailResponse = await fetch('/api/get-user-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: booking.customer_id })
+        })
 
-      const { email: customerEmail } = await emailResponse.json()
+        const { email: customerEmail } = await emailResponse.json()
 
-      if (customerEmail) {
-        // Send review request email to customer
-        const emailContent = emailTemplates.requestReview(
-          booking.customer?.profiles?.full_name || 'Customer',
-          profile?.full_name || 'Stylist',
-          bookingId
-        )
+        if (customerEmail) {
+          const emailContent = emailTemplates.requestReview(
+            booking.customer?.profiles?.full_name || 'Customer',
+            profile?.full_name || 'Stylist',
+            bookingId
+          )
 
-        try {
           await sendEmail(customerEmail, emailContent.subject, emailContent.html)
-        } catch (emailError) {
-          console.error('Failed to send review request email:', emailError)
         }
+      } catch (emailError) {
+        console.error('Failed to send review request email:', emailError)
+        // Continue anyway - email is optional
       }
-        // ← ADD NOTIFICATION HERE
-// Create notification for customer
-await createNotification(
-  booking.customer_id,
-  'booking_completed',
-  'Booking Completed! 🎉',
-  `How was your experience with ${profile?.full_name}? Leave a review!`,
-  '/customer/dashboard'
-)
+
+      // Create notification
+      try { // ← ADD TRY-CATCH
+        await createNotification(
+          booking.customer_id,
+          'booking_completed',
+          'Booking Completed! 🎉',
+          `How was your experience with ${profile?.full_name}? Leave a review!`,
+          '/customer/dashboard'
+        )
+      } catch (notifError) {
+        console.error('Failed to create notification:', notifError)
+        // Continue anyway
+      }
     }
   } catch (error) {
     console.error('Error completing booking:', error)
+    alert('Error completing booking. Please try again.')
   }
 }
  const confirmBooking = async (bookingId: string) => {
