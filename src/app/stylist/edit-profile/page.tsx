@@ -269,6 +269,20 @@ const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
         </div>
 
         <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-8 space-y-8">
+          {/* Profile Verification */}
+  <div>
+    <label className="block text-sm font-medium text-gray-300 mb-3">
+      Profile Verification
+    </label>
+    <VerificationSubmission
+      stylistId={user?.id || ''}
+      currentStatus={verificationStatus}
+      onSuccess={() => {
+        loadProfile()
+        alert('Verification status updated!')
+      }}
+    />
+  </div>
 
           <div className="text-center">
     <label className="block text-sm font-medium text-gray-300 mb-4">
