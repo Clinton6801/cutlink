@@ -82,6 +82,7 @@ export default function EditStylistProfile() {
         })
         setPortfolioImages(stylistData.portfolio_images || [])
         setWorkingHours(stylistData.working_hours || workingHours)
+        setVerificationStatus(stylistData.verification_status || 'unverified')
       }
 
       // Get user profile for avatar
