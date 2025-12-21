@@ -7,6 +7,7 @@ import Link from 'next/link'
 import ImageUpload from '../../../components/ImageUpload'
 import WorkingHoursSettings from '../../../components/WorkingHoursSettings'
 import ServiceManager from '../../../components/ServiceManager'
+import VerificationSubmission from '../../../components/VerificationSubmission'
 
 export default function EditStylistProfile() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function EditStylistProfile() {
   const [portfolioImages, setPortfolioImages] = useState<string[]>([])
   const [avatarUrl, setAvatarUrl] = useState<string>('') 
   const [uploadingAvatar, setUploadingAvatar] = useState(false) 
+  const [verificationStatus, setVerificationStatus] = useState('unverified')
   
   const [formData, setFormData] = useState({
     bio: '',
