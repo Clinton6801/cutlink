@@ -186,10 +186,118 @@ export const emailTemplates = {
             </div>
             <div class="footer">
               <p>© 2024 CutLink - Your barber, your way</p>
-            </div>
           </div>
-        </body>
-      </html>
-    `
-  })
-}
+        </div>
+      </body>
+    </html>
+  `
+}),
+
+// Verification approved
+verificationApproved: (stylistName: string, adminNotes?: string) => ({
+  subject: '🎉 Your CutLink Profile is Verified!',
+  html: `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #000 0%, #1a1a1a 100%); color: #FFD700; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: #FFD700; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+          .success { background: #d4edda; padding: 20px; border-left: 4px solid #28a745; margin: 20px 0; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✂️ CutLink</h1>
+            <h2>Congratulations! 🎉</h2>
+          </div>
+          <div class="content">
+            <p>Hi <strong>${stylistName}</strong>,</p>
+            
+            <div class="success">
+              <h3>Your profile has been verified! ✅</h3>
+              <p>You now have a verified badge on your profile, which helps build trust with customers and improves your search ranking.</p>
+            </div>
+
+            <p><strong>What this means for you:</strong></p>
+            <ul>
+              <li>✅ Verified badge displayed on your profile</li>
+              <li>🔝 Higher ranking in search results</li>
+              <li>💰 More booking opportunities</li>
+              <li>🤝 Increased customer trust</li>
+            </ul>
+
+            ${adminNotes ? `<p><strong>Note from our team:</strong> ${adminNotes}</p>` : ''}
+            
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/stylist/dashboard" class="button">View Your Dashboard</a>
+
+            <p>Keep up the great work and continue providing excellent service to your customers!</p>
+          </div>
+          <div class="footer">
+            <p>© 2024 CutLink - Your barber, your way</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+}),
+
+// Verification rejected
+verificationRejected: (stylistName: string, reason: string) => ({
+  subject: 'CutLink Verification Update',
+  html: `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #000 0%, #1a1a1a 100%); color: #FFD700; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: #FFD700; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+          .warning { background: #fff3cd; padding: 20px; border-left: 4px solid #ffc107; margin: 20px 0; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✂️ CutLink</h1>
+            <h2>Verification Update</h2>
+          </div>
+          <div class="content">
+            <p>Hi <strong>${stylistName}</strong>,</p>
+            
+            <div class="warning">
+              <h3>Your verification request needs attention</h3>
+              <p>Unfortunately, we couldn't approve your verification at this time.</p>
+            </div>
+
+            <p><strong>Reason:</strong></p>
+            <p>${reason}</p>
+
+            <p><strong>What to do next:</strong></p>
+            <ul>
+              <li>Review the reason above</li>
+              <li>Prepare the required documents (valid ID, proof of experience, recent photo with tools)</li>
+              <li>Submit a new verification request from your profile</li>
+            </ul>
+            
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/stylist/edit-profile" class="button">Resubmit Verification</a>
+
+            <p>If you have questions, please contact our support team.</p>
+          </div>
+          <div class="footer">
+            <p>© 2024 CutLink - Your barber, your way</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+  }),
+};
