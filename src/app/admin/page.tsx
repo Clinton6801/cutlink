@@ -12,6 +12,7 @@ interface Stats {
   pendingBookings: number
   completedBookings: number
   totalRevenue: number
+  pendingVerifications: number
   recentUsers: any[]
   recentBookings: any[]
 }
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
     pendingBookings: 0,
     completedBookings: 0,
     totalRevenue: 0,
+    pendingVerifications: 0,
     recentUsers: [],
     recentBookings: []
   })
@@ -90,6 +92,11 @@ export default function AdminDashboard() {
         .from('bookings')
         .select('*', { count: 'exact', head: true })
 
+        const { count: pendingVerificationCount } = await supabase
+  .from('stylist_profiles')
+  .select('*', { count: 'exact', head: true })
+  .eq('verification_status', 'pending')
+
       // Count pending bookings
       const { count: pendingCount } = await supabase
         .from('bookings')
@@ -135,6 +142,7 @@ export default function AdminDashboard() {
         pendingBookings: pendingCount || 0,
         completedBookings: completedCount || 0,
         totalRevenue,
+        pendingVerifications: pendingVerificationCount || 0,
         recentUsers: recentUsers || [],
         recentBookings: recentBookingsData || []
       })
@@ -261,6 +269,67 @@ export default function AdminDashboard() {
             <p className="text-black/70 text-sm">From completed bookings</p>
           </div>
         </div>
+
+        // Add this section to your admin dashboard after the stats grid (around line 190)
+// This goes in src/app/admin/page.tsx
+
+{/* Quick Actions */}
+<div className="mb-12">
+  <h3 className="text-2xl font-bold text-white mb-6">Quick Actions</h3>
+  <div className="grid md:grid-cols-3 gap-6">
+    {/* Verification Management */}
+    <Link
+      href="/admin/verification"
+      className="bg-gradient-to-br from-yellow-500/20 to-gray-900 border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500 transition group"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-5xl">✅</div>
+        <div className="text-3xl font-bold text-yellow-400">
+          {/* Show pending count */}
+          {stats.pendingVerifications || 0}
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-white mb-2">
+        Verification Requests
+      </h3>
+      <p className="text-gray-400 text-sm group-hover:text-gray-300 transition">
+        Review pending stylist verifications →
+      </p>
+    </Link>
+
+    {/* User Management */}
+    <div className="bg-gradient-to-br from-blue-500/20 to-gray-900 border border-blue-500/30 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-5xl">👥</div>
+        <div className="text-3xl font-bold text-blue-400">
+          {stats.totalCustomers + stats.totalStylists}
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-white mb-2">
+        Total Users
+      </h3>
+      <p className="text-gray-400 text-sm">
+        Customers and stylists combined
+      </p>
+    </div>
+
+    {/* Revenue Stats */}
+    <div className="bg-gradient-to-br from-green-500/20 to-gray-900 border border-green-500/30 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-5xl">💰</div>
+        <div className="text-3xl font-bold text-green-400">
+          ₦{stats.totalRevenue.toLocaleString()}
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-white mb-2">
+        Total Revenue
+      </h3>
+      <p className="text-gray-400 text-sm">
+        From completed bookings
+      </p>
+    </div>
+  </div>
+</div>
 
         {/* Recent Users */}
         <div className="mb-12">
