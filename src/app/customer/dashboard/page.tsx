@@ -169,72 +169,98 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
     </div>
 
     {/* Desktop Layout */}
-    <div className="hidden md:flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-2">
-        <span className="text-3xl">✂️</span>
-        <h1 className="text-2xl font-bold">
-          <span className="text-yellow-500">Cut</span>
-          <span className="text-white">Link</span>
-        </h1>
-      </Link>
-      <div className="flex items-center gap-6">
-         {user && <NotificationBell userId={user.id} />} 
-        <Link
-          href="/messages"
-          className="text-gray-300 hover:text-yellow-500 transition font-medium"
-        >
-          💬 Messages
-        </Link>
-        <Link
-          href="/browse"
-          className="text-gray-300 hover:text-yellow-500 transition font-medium"
-        >
-          Browse Stylists
-        </Link>
-      
-  <Link
-    href="/favorites"
-    className="text-gray-300 hover:text-yellow-500 transition font-medium"
-  >
-    ❤️ Favorites
+<div className="hidden md:flex items-center justify-between">
+  <Link href="/" className="flex items-center gap-2">
+    <span className="text-3xl">✂️</span>
+    <h1 className="text-2xl font-bold">
+      <span className="text-yellow-500">Cut</span>
+      <span className="text-white">Link</span>
+    </h1>
   </Link>
-        <button
-          onClick={handleSignOut}
-          className="text-gray-300 hover:text-red-500 transition"
-        >
-          Sign Out
-        </button>
-      </div>
-    </div>
+  
+  <div className="flex items-center gap-6">
+    {/* Notification Bell - Already added! ✅ */}
+    {user && <NotificationBell userId={user.id} />}
+    
+    <Link
+      href="/messages"
+      className="text-gray-300 hover:text-yellow-500 transition font-medium"
+    >
+      💬 Messages
+    </Link>
+    
+    <Link
+      href="/browse"
+      className="text-gray-300 hover:text-yellow-500 transition font-medium"
+    >
+      Browse Stylists
+    </Link>
+    
+    <Link
+      href="/favorites"
+      className="text-gray-300 hover:text-yellow-500 transition font-medium"
+    >
+      ❤️ Favorites
+    </Link>
+    
+    <button
+      onClick={handleSignOut}
+      className="text-gray-300 hover:text-red-500 transition"
+    >
+      Sign Out
+    </button>
+  </div>
+</div>
 
-    {/* Mobile Menu Dropdown */}
-    {mobileMenuOpen && (
-      <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
-        <Link
-          href="/messages"
-          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          💬 Messages
-        </Link>
-        <Link
-          href="/browse"
-          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          Browse Stylists
-        </Link>
-        <button
-          onClick={() => {
-            setMobileMenuOpen(false)
-            handleSignOut()
-          }}
-          className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
-        >
-          Sign Out
-        </button>
-      </div>
-    )}
+// OPTIONAL: Add to mobile menu too (around line 295):
+
+{/* Mobile Menu Dropdown */}
+{mobileMenuOpen && (
+  <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
+    {/* Add link to full notifications page for mobile */}
+    <Link
+      href="/notifications"
+      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+      onClick={() => setMobileMenuOpen(false)}
+    >
+      🔔 Notifications
+    </Link>
+    
+    <Link
+      href="/messages"
+      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+      onClick={() => setMobileMenuOpen(false)}
+    >
+      💬 Messages
+    </Link>
+    
+    <Link
+      href="/browse"
+      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+      onClick={() => setMobileMenuOpen(false)}
+    >
+      Browse Stylists
+    </Link>
+    
+    <Link
+      href="/favorites"
+      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+      onClick={() => setMobileMenuOpen(false)}
+    >
+      ❤️ Favorites
+    </Link>
+    
+    <button
+      onClick={() => {
+        setMobileMenuOpen(false)
+        handleSignOut()
+      }}
+      className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
+    >
+      Sign Out
+    </button>
+  </div>
+)}
   </div>
 </header>
 
