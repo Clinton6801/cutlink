@@ -192,6 +192,19 @@ export default function CustomerSignup() {
   )}
 </div>
 
+<label className="flex items-center gap-2">
+  <input type="checkbox" required />
+  <span className="text-sm text-gray-300">
+    I agree to the{' '}
+    <Link href="/terms" className="text-yellow-500 hover:underline">
+      Terms of Service
+    </Link>{' '}
+    and{' '}
+    <Link href="/privacy" className="text-yellow-500 hover:underline">
+      Privacy Policy
+    </Link>
+  </span>
+</label>
             {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg">
