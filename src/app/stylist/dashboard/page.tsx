@@ -8,6 +8,7 @@ import CancellationModal from '../../../components/CancellationModal'
 import { sendEmail } from '../../../lib/sendEmail'
 import { emailTemplates } from '../../../lib/emailTemplates'
 import { createNotification } from '../../../lib/createNotification'
+import NotificationBell from '../../../components/NotificationBell'
 
 interface Booking {
   id: string
@@ -326,6 +327,7 @@ await createNotification(
         </h1>
       </Link>
       <div className="flex items-center gap-6">
+        {user && <NotificationBell userId={user.id} />}
         <Link
           href="/messages"
           className="text-gray-300 hover:text-yellow-500 transition font-medium"

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import NotificationBell from '../../components/NotificationBell'
 
 interface Stats {
   totalCustomers: number
@@ -185,6 +186,7 @@ export default function AdminDashboard() {
             </h1>
           </Link>
           <div className="flex items-center gap-6">
+            {user && <NotificationBell userId={user.id} />}
             <Link href="/" className="text-gray-300 hover:text-yellow-500 transition">
               Home
             </Link>
