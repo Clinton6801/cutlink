@@ -390,6 +390,19 @@ export default function StylistSignup() {
                     />
                   </div>
                 </div>
+                <label className="flex items-center gap-2">
+  <input type="checkbox" required />
+  <span className="text-sm text-gray-300">
+    I agree to the{' '}
+    <Link href="/terms" className="text-yellow-500 hover:underline">
+      Terms of Service
+    </Link>{' '}
+    and{' '}
+    <Link href="/privacy" className="text-yellow-500 hover:underline">
+      Privacy Policy
+    </Link>
+  </span>
+</label>
 
                 {/* Error Message */}
                 {error && (
