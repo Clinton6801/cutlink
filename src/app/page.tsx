@@ -471,8 +471,15 @@ export default function Home() {
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-yellow-500 transition">About Us</a></li>
                 <li><a href="#" className="hover:text-yellow-500 transition">Contact</a></li>
-                <li><a href="#" className="hover:text-yellow-500 transition">Terms & Conditions</a></li>
-                <li><a href="#" className="hover:text-yellow-500 transition">Privacy Policy</a></li>
+                <Link href="/terms" className="hover:text-yellow-500 transition">
+  Terms & Conditions
+</Link>
+<Link href="/privacy" className="hover:text-yellow-500 transition">
+  Privacy Policy
+</Link>
+<Link href="/cancellation" className="hover:text-yellow-500 transition">
+  Cancellation Policy
+</Link>
               </ul>
             </div>
           </div>
