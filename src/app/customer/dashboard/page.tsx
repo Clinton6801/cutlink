@@ -212,7 +212,6 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
   </div>
 </div>
 
-// OPTIONAL: Add to mobile menu too (around line 295):
 
 {/* Mobile Menu Dropdown */}
 {mobileMenuOpen && (
