@@ -7,6 +7,9 @@ import Link from 'next/link'
 import ReviewModal from '../../../components/ReviewModal'
 import CancellationModal from '../../../components/CancellationModal'
 import NotificationBell from '../../../components/NotificationBell'
+import PaymentButton from '../../../components/PaymentButton' // ✨ NEW
+
+import { createNotification } from '../../../lib/createNotification' // ✨ NEW
 
 interface Booking {
   id: string
@@ -39,7 +42,7 @@ export default function CustomerDashboard() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false) 
   const [selectedBooking, setSelectedBooking] = useState<any>(null)
   const [cancellationModalOpen, setCancellationModalOpen] = useState(false)
-const [bookingToCancel, setBookingToCancel] = useState<any>(null)
+  const [bookingToCancel, setBookingToCancel] = useState<any>(null)
 
   useEffect(() => {
     checkAuth()
@@ -75,56 +78,109 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
   }
 
   const fetchBookings = async (userId: string) => {
-  try {
-    // First get the bookings
-    const { data: bookingsData, error: bookingsError } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('customer_id', userId)
-      .order('appointment_date', { ascending: false })
+    try {
+      // First get the bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('customer_id', userId)
+        .order('appointment_date', { ascending: false })
 
-    if (bookingsError) {
-      console.error('Bookings error:', bookingsError)
-      throw bookingsError
-    }
+      if (bookingsError) {
+        console.error('Bookings error:', bookingsError)
+        throw bookingsError
+      }
 
-    // Then for each booking, get the stylist info
-    const bookingsWithStylists = await Promise.all(
-      (bookingsData || []).map(async (booking) => {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name, avatar_url')
-          .eq('id', booking.stylist_id)
-          .single()
+      // Then for each booking, get the stylist info
+      const bookingsWithStylists = await Promise.all(
+        (bookingsData || []).map(async (booking) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('id', booking.stylist_id)
+            .single()
 
-        return {
-          ...booking,
-          stylist: {
-            profiles: profileData || { full_name: 'Unknown Stylist', avatar_url: null }
+          return {
+            ...booking,
+            stylist: {
+              profiles: profileData || { full_name: 'Unknown Stylist', avatar_url: null }
+            }
           }
-        }
-      })
-    )
+        })
+      )
 
-    setBookings(bookingsWithStylists)
-  } catch (error) {
-    console.error('Error fetching bookings:', error)
-    setBookings([]) // Set empty array on error so page still loads
+      setBookings(bookingsWithStylists)
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      setBookings([]) // Set empty array on error so page still loads
+    }
   }
-}
+  
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
   }
 
- const cancelBooking = (booking: any) => {
-  setBookingToCancel(booking)
-  setCancellationModalOpen(true)
-}
+  const cancelBooking = (booking: any) => {
+    setBookingToCancel(booking)
+    setCancellationModalOpen(true)
+  }
+
   const openReviewModal = (booking: any) => {
-  setSelectedBooking(booking)
-  setReviewModalOpen(true)
-     }
+    setSelectedBooking(booking)
+    setReviewModalOpen(true)
+  }
+
+  // ✨ NEW: Complete booking function
+  const completeBooking = async (bookingId: string) => {
+    if (!confirm('Confirm that this service has been completed?')) return
+    
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'completed' })
+        .eq('id', bookingId)
+
+      if (error) throw error
+
+      // Release earnings to stylist
+      try {
+        await supabase.rpc('release_earnings_for_booking', {
+          booking_uuid: bookingId
+        })
+      } catch (releaseError) {
+        console.error('Error releasing earnings:', releaseError)
+      }
+
+      // Get booking details for notification
+      const booking = bookings.find(b => b.id === bookingId)
+      if (booking) {
+        // Get earnings amount
+        const { data: earningsData } = await supabase
+          .from('stylist_earnings')
+          .select('stylist_payout')
+          .eq('booking_id', bookingId)
+          .single()
+
+        const payoutAmount = earningsData?.stylist_payout || booking.price
+
+        // Notify stylist
+        await createNotification(
+          booking.stylist_id,
+          'earnings_released',
+          '💰 Service Completed & Paid!',
+          `Customer confirmed completion. ₦${payoutAmount.toLocaleString()} is now available in your balance.`,
+          '/stylist/dashboard'
+        )
+      }
+
+      alert('Service marked as completed! You can now leave a review.')
+      if (user) await fetchBookings(user.id)
+    } catch (error: any) {
+      console.error('Error completing booking:', error)
+      alert('Error: ' + error.message)
+    }
+  }
 
   const upcomingBookings = bookings.filter(b => 
     b.status === 'pending' || b.status === 'confirmed'
@@ -148,120 +204,93 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
-      {/* Header */}
-<header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-    {/* Mobile Layout */}
-    <div className="flex md:hidden items-center justify-between">
-      <Link href="/" className="flex items-center gap-2">
-        <span className="text-2xl">✂️</span>
-        <h1 className="text-xl font-bold">
-          <span className="text-yellow-500">Cut</span>
-          <span className="text-white">Link</span>
-        </h1>
-      </Link>
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="text-white text-2xl"
-      >
-        ☰
-      </button>
-    </div>
+      <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+          {/* Mobile Layout */}
+          <div className="flex md:hidden items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-2xl">✂️</span>
+              <h1 className="text-xl font-bold">
+                <span className="text-yellow-500">Cut</span>
+                <span className="text-white">Link</span>
+              </h1>
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-white text-2xl"
+            >
+              ☰
+            </button>
+          </div>
 
-    {/* Desktop Layout */}
-<div className="hidden md:flex items-center justify-between">
-  <Link href="/" className="flex items-center gap-2">
-    <span className="text-3xl">✂️</span>
-    <h1 className="text-2xl font-bold">
-      <span className="text-yellow-500">Cut</span>
-      <span className="text-white">Link</span>
-    </h1>
-  </Link>
-  
-  <div className="flex items-center gap-6">
-    {/* Notification Bell - Already added! ✅ */}
-    {user && <NotificationBell userId={user.id} />}
-    
-    <Link
-      href="/messages"
-      className="text-gray-300 hover:text-yellow-500 transition font-medium"
-    >
-      💬 Messages
-    </Link>
-    
-    <Link
-      href="/browse"
-      className="text-gray-300 hover:text-yellow-500 transition font-medium"
-    >
-      Browse Stylists
-    </Link>
-    
-    <Link
-      href="/favorites"
-      className="text-gray-300 hover:text-yellow-500 transition font-medium"
-    >
-      ❤️ Favorites
-    </Link>
-    
-    <button
-      onClick={handleSignOut}
-      className="text-gray-300 hover:text-red-500 transition"
-    >
-      Sign Out
-    </button>
-  </div>
-</div>
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-3xl">✂️</span>
+              <h1 className="text-2xl font-bold">
+                <span className="text-yellow-500">Cut</span>
+                <span className="text-white">Link</span>
+              </h1>
+            </Link>
+            <div className="flex items-center gap-6">
+              {user && <NotificationBell userId={user.id} />} 
+              <Link
+                href="/messages"
+                className="text-gray-300 hover:text-yellow-500 transition font-medium"
+              >
+                💬 Messages
+              </Link>
+              <Link
+                href="/browse"
+                className="text-gray-300 hover:text-yellow-500 transition font-medium"
+              >
+                Browse Stylists
+              </Link>
+              <Link
+                href="/favorites"
+                className="text-gray-300 hover:text-yellow-500 transition font-medium"
+              >
+                ❤️ Favorites
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="text-gray-300 hover:text-red-500 transition"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
 
-
-{/* Mobile Menu Dropdown */}
-{mobileMenuOpen && (
-  <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
-    {/* Add link to full notifications page for mobile */}
-    <Link
-      href="/notifications"
-      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-      onClick={() => setMobileMenuOpen(false)}
-    >
-      🔔 Notifications
-    </Link>
-    
-    <Link
-      href="/messages"
-      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-      onClick={() => setMobileMenuOpen(false)}
-    >
-      💬 Messages
-    </Link>
-    
-    <Link
-      href="/browse"
-      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-      onClick={() => setMobileMenuOpen(false)}
-    >
-      Browse Stylists
-    </Link>
-    
-    <Link
-      href="/favorites"
-      className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-      onClick={() => setMobileMenuOpen(false)}
-    >
-      ❤️ Favorites
-    </Link>
-    
-    <button
-      onClick={() => {
-        setMobileMenuOpen(false)
-        handleSignOut()
-      }}
-      className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
-    >
-      Sign Out
-    </button>
-  </div>
-)}
-  </div>
-</header>
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
+              <Link
+                href="/messages"
+                className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                💬 Messages
+              </Link>
+              <Link
+                href="/browse"
+                className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Browse Stylists
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  handleSignOut()
+                }}
+                className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Welcome Section */}
@@ -424,42 +453,80 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2">
-                 <Link
-               href={`/stylist/${(booking as any).stylist_profiles?.user_id || ''}`}
+                {/* ✨ UPDATED: Actions with Payment */}
+                <div className="flex flex-col gap-2 min-w-[160px]">
+                  {/* View Stylist */}
+                  <Link
+                    href={`/stylist/${booking.stylist_id}`}
                     className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-center transition text-sm"
-                            >
-                          View Stylist
-                               </Link>
+                  >
+                    View Stylist
+                  </Link>
 
+                  {/* Message */}
+                  <Link 
+                    href={`/messages/${booking.stylist_id}`} 
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg text-center transition text-sm"
+                  >
+                    💬 Message
+                  </Link>
 
-                               <Link href={`/messages/${booking.stylist_id}`} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg text-center transition text-sm"
-                               >
-                                💬 Message
-                                </Link>
-                 
- {(booking.status === 'pending' || booking.status === 'confirmed') && (
-  <button
-    onClick={() => {
-      if (booking.status === 'confirmed') {
-        if (!confirm('This booking is already confirmed. Are you sure you want to cancel?')) return
-      }
-      cancelBooking(booking)
-    }}
-    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
-  >
-    Cancel
-  </button>
-)}
-                 {booking.status === 'completed' && (
-  <button 
-    onClick={() => openReviewModal(booking)}
-    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
-  >
-    ⭐ Leave Review
-  </button>
-)}
+                  {/* Payment Button */}
+                  {booking.payment_status !== 'paid' && (
+                    booking.status === 'pending' || booking.status === 'confirmed'
+                  ) && (
+                    <div className="w-full">
+                      <PaymentButton 
+                        bookingId={booking.id}
+                        amount={booking.price}
+                        onSuccess={() => {
+                          if (user) fetchBookings(user.id)
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Mark Complete */}
+                  {booking.status === 'confirmed' && booking.payment_status === 'paid' && (
+                    <button
+                      onClick={() => completeBooking(booking.id)}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition text-sm"
+                    >
+                      ✅ Mark Complete
+                    </button>
+                  )}
+
+                  {/* Cancel */}
+                  {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                    <button
+                      onClick={() => {
+                        if (booking.status === 'confirmed') {
+                          if (!confirm('This booking is already confirmed. Are you sure you want to cancel?')) return
+                        }
+                        cancelBooking(booking)
+                      }}
+                      className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
+                    >
+                      Cancel
+                    </button>
+                  )}
+
+                  {/* Review */}
+                  {booking.status === 'completed' && (
+                    <button 
+                      onClick={() => openReviewModal(booking)}
+                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
+                    >
+                      ⭐ Leave Review
+                    </button>
+                  )}
+
+                  {/* Payment Status Badge */}
+                  {booking.payment_status === 'paid' && (
+                    <div className="px-3 py-2 bg-green-500/20 border border-green-500 rounded-lg text-center">
+                      <span className="text-green-500 text-xs font-bold">✅ PAID</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -495,7 +562,7 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
         />
       )}
 
-       {/* Cancellation Modal */}
+      {/* Cancellation Modal */}
       {cancellationModalOpen && bookingToCancel && (
         <CancellationModal
           bookingId={bookingToCancel.id}
@@ -515,4 +582,4 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
       )}
     </main>
   )
-}                                                                                                                                                                                                                                                                                               
+}
