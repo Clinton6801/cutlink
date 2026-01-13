@@ -1,5 +1,3 @@
-// Save as: src/app/privacy/page.tsx
-
 'use client'
 
 import Link from 'next/link'
