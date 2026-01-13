@@ -49,7 +49,8 @@ export default function StylistDashboard() {
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'completed'>('pending')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) 
   const [cancellationModalOpen, setCancellationModalOpen] = useState(false)
-const [bookingToCancel, setBookingToCancel] = useState<any>(null) 
+  const [bookingToCancel, setBookingToCancel] = useState<any>(null)
+  const [availableBalance, setAvailableBalance] = useState(0) // ✨ NEW
 
   useEffect(() => {
     checkAuth()
@@ -84,6 +85,19 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
 
       setStylistProfile(stylistData as any)
 
+      // ✨ NEW: Get available balance
+      try {
+        const { data: balanceData } = await supabase
+          .rpc('get_stylist_available_balance', {
+            stylist_user_id: user.id
+          })
+        
+        setAvailableBalance(balanceData || 0)
+      } catch (balanceError) {
+        console.error('Error fetching balance:', balanceError)
+        setAvailableBalance(0)
+      }
+
       // Fetch bookings
       await fetchBookings(user.id)
     } catch (error) {
@@ -94,51 +108,52 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
   }
 
   const fetchBookings = async (userId: string) => {
-  try {
-    // First get the bookings
-    const { data: bookingsData, error: bookingsError } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('stylist_id', userId)
-      .order('appointment_date', { ascending: true })
+    try {
+      // First get the bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('stylist_id', userId)
+        .order('appointment_date', { ascending: true })
 
-   if (bookingsError) {
-  console.error('Bookings error details:', {
-    message: bookingsError.message,
-    details: bookingsError.details,
-    hint: bookingsError.hint,
-    code: bookingsError.code
-  })
-  throw bookingsError
-}
-    // Then for each booking, get the customer info
-    const bookingsWithCustomers = await Promise.all(
-      (bookingsData || []).map(async (booking) => {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name, phone_number, avatar_url')
-          .eq('id', booking.customer_id)
-          .single()
+      if (bookingsError) {
+        console.error('Bookings error details:', {
+          message: bookingsError.message,
+          details: bookingsError.details,
+          hint: bookingsError.hint,
+          code: bookingsError.code
+        })
+        throw bookingsError
+      }
+      // Then for each booking, get the customer info
+      const bookingsWithCustomers = await Promise.all(
+        (bookingsData || []).map(async (booking) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, phone_number, avatar_url')
+            .eq('id', booking.customer_id)
+            .single()
 
-        return {
-          ...booking,
-          customer: {
-            profiles: profileData || { 
-              full_name: 'Unknown Customer', 
-              phone_number: 'N/A',
-              avatar_url: null 
+          return {
+            ...booking,
+            customer: {
+              profiles: profileData || { 
+                full_name: 'Unknown Customer', 
+                phone_number: 'N/A',
+                avatar_url: null 
+              }
             }
           }
-        }
-      })
-    )
+        })
+      )
 
-    setBookings(bookingsWithCustomers)
-  } catch (error) {
-    console.error('Error fetching bookings:', error)
-    setBookings([]) // Set empty array on error so page still loads
+      setBookings(bookingsWithCustomers)
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      setBookings([]) // Set empty array on error so page still loads
+    }
   }
-}
+  
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
@@ -160,18 +175,113 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
     }
   }
 
- const completeBooking = async (bookingId: string) => {
-  if (!confirm('Mark this booking as completed?')) return
-  
-  try {
-    // Update booking status
-    await updateBookingStatus(bookingId, 'completed')
+  // ✨ UPDATED: Complete booking with earnings release
+  const completeBooking = async (bookingId: string) => {
+    if (!confirm('Mark this booking as completed?')) return
     
-    // Get booking details
-    const booking = bookings.find(b => b.id === bookingId)
-    if (booking) {
-      // Get customer email
-      try { // ← ADD TRY-CATCH
+    try {
+      // Update booking status
+      await updateBookingStatus(bookingId, 'completed')
+      
+      // ✨ NEW: Release earnings from escrow
+      try {
+        const { error: earningsError } = await supabase
+          .rpc('release_earnings_for_booking', {
+            booking_uuid: bookingId
+          })
+
+        if (earningsError) {
+          console.error('Error releasing earnings:', earningsError)
+        }
+      } catch (releaseError) {
+        console.error('Failed to release earnings:', releaseError)
+      }
+
+      // Get booking details
+      const booking = bookings.find(b => b.id === bookingId)
+      if (booking) {
+        // ✨ NEW: Get earnings details
+        const { data: earningsData } = await supabase
+          .from('stylist_earnings')
+          .select('stylist_payout')
+          .eq('booking_id', bookingId)
+          .single()
+
+        const payoutAmount = earningsData?.stylist_payout || booking.price
+
+        // ✨ NEW: Notify stylist about released earnings
+        try {
+          await createNotification(
+            user.id,
+            'earnings_released',
+            '💰 Earnings Released!',
+            `₦${payoutAmount.toLocaleString()} is now available in your balance`,
+            '/stylist/dashboard'
+          )
+        } catch (notifError) {
+          console.error('Failed to create earnings notification:', notifError)
+        }
+
+        // Refresh balance
+        const { data: balanceData } = await supabase
+          .rpc('get_stylist_available_balance', {
+            stylist_user_id: user.id
+          })
+        setAvailableBalance(balanceData || 0)
+
+        // Get customer email
+        try {
+          const emailResponse = await fetch('/api/get-user-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: booking.customer_id })
+          })
+
+          const { email: customerEmail } = await emailResponse.json()
+
+          if (customerEmail) {
+            const emailContent = emailTemplates.requestReview(
+              booking.customer?.profiles?.full_name || 'Customer',
+              profile?.full_name || 'Stylist',
+              bookingId
+            )
+
+            await sendEmail(customerEmail, emailContent.subject, emailContent.html)
+          }
+        } catch (emailError) {
+          console.error('Failed to send review request email:', emailError)
+        }
+
+        // Create notification for customer
+        try {
+          await createNotification(
+            booking.customer_id,
+            'booking_completed',
+            'Booking Completed! 🎉',
+            `How was your experience with ${profile?.full_name}? Leave a review!`,
+            '/customer/dashboard'
+          )
+        } catch (notifError) {
+          console.error('Failed to create notification:', notifError)
+        }
+      }
+    } catch (error) {
+      console.error('Error completing booking:', error)
+      alert('Error completing booking. Please try again.')
+    }
+  }
+
+  const confirmBooking = async (bookingId: string) => {
+    if (!confirm('Confirm this booking?')) return
+    
+    try {
+      // Update booking status
+      await updateBookingStatus(bookingId, 'confirmed')
+      
+      // Get booking details
+      const booking = bookings.find(b => b.id === bookingId)
+      if (booking) {
+        // Get customer email
         const emailResponse = await fetch('/api/get-user-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -181,88 +291,35 @@ const [bookingToCancel, setBookingToCancel] = useState<any>(null)
         const { email: customerEmail } = await emailResponse.json()
 
         if (customerEmail) {
-          const emailContent = emailTemplates.requestReview(
+          // Send confirmation email to customer
+          const emailContent = emailTemplates.bookingConfirmed(
             booking.customer?.profiles?.full_name || 'Customer',
             profile?.full_name || 'Stylist',
-            bookingId
+            new Date(booking.appointment_date).toLocaleDateString(),
+            booking.appointment_time,
+            booking.location
           )
 
-          await sendEmail(customerEmail, emailContent.subject, emailContent.html)
+          try {
+            await sendEmail(customerEmail, emailContent.subject, emailContent.html)
+          } catch (emailError) {
+            console.error('Failed to send confirmation email:', emailError)
+          }
         }
-      } catch (emailError) {
-        console.error('Failed to send review request email:', emailError)
-        // Continue anyway - email is optional
-      }
-
-      // Create notification
-      try { // ← ADD TRY-CATCH
+        
+        // Create notification for customer
         await createNotification(
           booking.customer_id,
-          'booking_completed',
-          'Booking Completed! 🎉',
-          `How was your experience with ${profile?.full_name}? Leave a review!`,
+          'booking_confirmed',
+          'Booking Confirmed! ✅',
+          `${profile?.full_name || 'Your stylist'} confirmed your booking for ${new Date(booking.appointment_date).toLocaleDateString()}`,
           '/customer/dashboard'
         )
-      } catch (notifError) {
-        console.error('Failed to create notification:', notifError)
-        // Continue anyway
       }
+    } catch (error) {
+      console.error('Error confirming booking:', error)
     }
-  } catch (error) {
-    console.error('Error completing booking:', error)
-    alert('Error completing booking. Please try again.')
   }
-}
- const confirmBooking = async (bookingId: string) => {
-  if (!confirm('Confirm this booking?')) return
-  
-  try {
-    // Update booking status
-    await updateBookingStatus(bookingId, 'confirmed')
-    
-    // ← ADD EMAIL SENDING HERE
-    // Get booking details
-    const booking = bookings.find(b => b.id === bookingId)
-    if (booking) {
-      // Get customer email
-      const emailResponse = await fetch('/api/get-user-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: booking.customer_id })
-      })
-
-      const { email: customerEmail } = await emailResponse.json()
-
-      if (customerEmail) {
-        // Send confirmation email to customer
-        const emailContent = emailTemplates.bookingConfirmed(
-          booking.customer?.profiles?.full_name || 'Customer',
-          profile?.full_name || 'Stylist',
-          new Date(booking.appointment_date).toLocaleDateString(),
-          booking.appointment_time,
-          booking.location
-        )
-
-        try {
-          await sendEmail(customerEmail, emailContent.subject, emailContent.html)
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError)
-        }
-      }
-      // ← ADD NOTIFICATION HERE
-// Create notification for customer
-await createNotification(
-  booking.customer_id,
-  'booking_confirmed',
-  'Booking Confirmed! ✅',
-  `${profile?.full_name || 'Your stylist'} confirmed your booking for ${new Date(booking.appointment_date).toLocaleDateString()}`,
-  '/customer/dashboard'
-)
-    }
-  } catch (error) {
-    console.error('Error confirming booking:', error)
-  }
-}
 
   const rejectBooking = async (bookingId: string) => {
     if (!confirm('Reject this booking? This cannot be undone.')) return
@@ -270,9 +327,9 @@ await createNotification(
   }
 
   const cancelConfirmedBooking = (booking: any) => {
-  setBookingToCancel(booking)
-  setCancellationModalOpen(true)
-}
+    setBookingToCancel(booking)
+    setCancellationModalOpen(true)
+  }
 
   const pendingBookings = bookings.filter(b => b.status === 'pending')
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
@@ -296,102 +353,101 @@ await createNotification(
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
-      {/* Header */}
-<header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-    {/* Mobile Layout */}
-    <div className="flex md:hidden items-center justify-between">
-      <Link href="/" className="flex items-center gap-2">
-        <span className="text-2xl">✂️</span>
-        <h1 className="text-xl font-bold">
-          <span className="text-yellow-500">Cut</span>
-          <span className="text-white">Link</span>
-        </h1>
-      </Link>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="text-white text-2xl"
-      >
-        ☰
-      </button>
-    </div>
+      <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+          {/* Mobile Layout */}
+          <div className="flex md:hidden items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-2xl">✂️</span>
+              <h1 className="text-xl font-bold">
+                <span className="text-yellow-500">Cut</span>
+                <span className="text-white">Link</span>
+              </h1>
+            </Link>
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-white text-2xl"
+            >
+              ☰
+            </button>
+          </div>
 
-    {/* Desktop Layout */}
-    <div className="hidden md:flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-2">
-        <span className="text-3xl">✂️</span>
-        <h1 className="text-2xl font-bold">
-          <span className="text-yellow-500">Cut</span>
-          <span className="text-white">Link</span>
-        </h1>
-      </Link>
-      <div className="flex items-center gap-6">
-        {user && <NotificationBell userId={user.id} />}
-        <Link
-          href="/messages"
-          className="text-gray-300 hover:text-yellow-500 transition font-medium"
-        >
-          💬 Messages
-        </Link>
-        <Link
-          href="/stylist/edit-profile"
-          className="text-gray-300 hover:text-yellow-500 transition font-medium"
-        >
-          Edit Profile
-        </Link>
-        <Link
-          href={`/stylist/${user?.id}`}
-          className="text-gray-300 hover:text-yellow-500 transition font-medium"
-        >
-          View My Profile
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="text-gray-300 hover:text-red-500 transition"
-        >
-          Sign Out
-        </button>
-      </div>
-    </div>
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-3xl">✂️</span>
+              <h1 className="text-2xl font-bold">
+                <span className="text-yellow-500">Cut</span>
+                <span className="text-white">Link</span>
+              </h1>
+            </Link>
+            <div className="flex items-center gap-6">
+              {user && <NotificationBell userId={user.id} />}
+              <Link
+                href="/messages"
+                className="text-gray-300 hover:text-yellow-500 transition font-medium"
+              >
+                💬 Messages
+              </Link>
+              <Link
+                href="/stylist/edit-profile"
+                className="text-gray-300 hover:text-yellow-500 transition font-medium"
+              >
+                Edit Profile
+              </Link>
+              <Link
+                href={`/stylist/${user?.id}`}
+                className="text-gray-300 hover:text-yellow-500 transition font-medium"
+              >
+                View My Profile
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="text-gray-300 hover:text-red-500 transition"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
 
-    {/* Mobile Menu Dropdown */}
-    {mobileMenuOpen && (
-      <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
-        <Link
-          href="/messages"
-          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          💬 Messages
-        </Link>
-        <Link
-          href="/stylist/edit-profile"
-          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          Edit Profile
-        </Link>
-        <Link
-          href={`/stylist/${user?.id}`}
-          className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          View My Profile
-        </Link>
-        <button
-          onClick={() => {
-            setMobileMenuOpen(false)
-            handleSignOut()
-          }}
-          className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
-        >
-          Sign Out
-        </button>
-      </div>
-    )}
-  </div>
-</header>
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
+              <Link
+                href="/messages"
+                className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                💬 Messages
+              </Link>
+              <Link
+                href="/stylist/edit-profile"
+                className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Edit Profile
+              </Link>
+              <Link
+                href={`/stylist/${user?.id}`}
+                className="block text-gray-300 hover:text-yellow-500 transition font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                View My Profile
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  handleSignOut()
+                }}
+                className="block w-full text-left text-gray-300 hover:text-red-500 transition font-medium py-2"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Welcome Section */}
@@ -405,8 +461,8 @@ await createNotification(
           <p className="text-gray-400">Manage your bookings and grow your business</p>
         </div>
 
-        {/* Stats Dashboard */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
+        {/* Stats Dashboard - ✨ UPDATED: Added 5th card */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
           <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -453,6 +509,31 @@ await createNotification(
               </div>
               <div className="text-5xl">⭐</div>
             </div>
+          </div>
+
+          {/* ✨ NEW: Available Balance Card */}
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-3xl font-bold text-black">
+                  ₦{availableBalance.toLocaleString()}
+                </div>
+                <div className="text-black/80 text-sm">Available Balance</div>
+              </div>
+              <div className="text-5xl">💵</div>
+            </div>
+            {availableBalance >= 1000 ? (
+              <button
+                onClick={() => alert('Payout system coming soon! Balance: ₦' + availableBalance.toLocaleString())}
+                className="w-full bg-black hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-lg transition text-sm"
+              >
+                Request Payout
+              </button>
+            ) : (
+              <p className="text-black/70 text-xs text-center">
+                Minimum ₦1,000 required
+              </p>
+            )}
           </div>
         </div>
 
@@ -621,26 +702,26 @@ await createNotification(
                   )}
                   {booking.status === 'confirmed' && (
                     <>
-                   <button
-                      onClick={() => completeBooking(booking.id)}
-                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
-                    >
-                      Mark Complete
-                    </button>
-                
-                   <button
-        onClick={() => cancelConfirmedBooking(booking)}
-        className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
-      >
-        Cancel
-      </button>
-                      </>
-          )}
+                      <button
+                        onClick={() => completeBooking(booking.id)}
+                        className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition text-sm"
+                      >
+                        Mark Complete
+                      </button>
+                      <button
+                        onClick={() => cancelConfirmedBooking(booking)}
+                        className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-lg transition text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
                   <Link 
-                  href={`/messages/${booking.customer_id}`}
-                   className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm block text-center">
+                    href={`/messages/${booking.customer_id}`}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm block text-center"
+                  >
                     💬 Message
-                    </Link>
+                  </Link>
                 </div>
               </div>
 
@@ -656,12 +737,12 @@ await createNotification(
         </div>
       </div>
 
-       {/* ← IS THIS MODAL HERE? */}
+      {/* Cancellation Modal */}
       {cancellationModalOpen && bookingToCancel && (
         <CancellationModal
           bookingId={bookingToCancel.id}
           userType="stylist"
-           bookingDetails={bookingToCancel}
+          bookingDetails={bookingToCancel}
           onClose={() => {
             setCancellationModalOpen(false)
             setBookingToCancel(null)
