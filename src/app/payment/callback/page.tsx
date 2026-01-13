@@ -2,11 +2,12 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function PaymentCallback() {
+// ✅ Wrap the component that uses useSearchParams in Suspense
+function PaymentCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying')
@@ -123,5 +124,18 @@ export default function PaymentCallback() {
         )}
       </div>
     </main>
+  )
+}
+
+// ✅ Export with Suspense wrapper
+export default function PaymentCallback() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-6xl animate-spin">⏳</div>
+      </main>
+    }>
+      <PaymentCallbackContent />
+    </Suspense>
   )
 }
