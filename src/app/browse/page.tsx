@@ -45,7 +45,9 @@ export default function BrowseStylists() {
   const fetchStylists = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Start building the query
+      let query = supabase
         .from('stylist_profiles')
         .select(`
           *,
@@ -54,7 +56,36 @@ export default function BrowseStylists() {
             avatar_url
           )
         `)
-        .order('rating', { ascending: false })
+
+      // 1. Add Search (Database level)
+      if (searchTerm) {
+        // This assumes you want to search by the full_name in the joined profiles table
+        // Note: Complex joins search might require a RPC or a View in Supabase
+        query = query.ilike('profiles.full_name', `%${searchTerm}%`)
+      }
+
+      // 2. Add Filters (Database level)
+      if (filters.serviceType !== 'all') {
+        query = query.or(`service_type.eq.${filters.serviceType},service_type.eq.both`)
+      }
+
+      if (filters.location !== 'all') {
+        query = query.eq('location', filters.location)
+      }
+
+      if (filters.minPrice) {
+        query = query.gte('price_range_min', parseInt(filters.minPrice))
+      }
+
+      if (filters.maxPrice) {
+        query = query.lte('price_range_max', parseInt(filters.maxPrice))
+      }
+
+      if (filters.minRating) {
+        query = query.gte('rating', parseFloat(filters.minRating))
+      }
+
+      const { data, error } = await query.order('rating', { ascending: false })
 
       if (error) throw error
       setStylists(data || [])
@@ -65,6 +96,10 @@ export default function BrowseStylists() {
     }
   }
 
+  // Update the useEffect to refetch when filters change
+  useEffect(() => {
+    fetchStylists()
+  }, [filters, searchTerm])
   // Filter stylists based on search and filters
   const filteredStylists = stylists.filter(stylist => {
     // Search by name
