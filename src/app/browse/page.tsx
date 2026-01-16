@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { StylistSkeleton } from '../../components/StylistSkeleton'
 import Link from 'next/link'
 
 interface Stylist {
@@ -315,13 +316,14 @@ export default function BrowseStylists() {
           </p>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">✂️</div>
-            <p className="text-xl text-gray-400">Loading stylists...</p>
-          </div>
-        )}
+       {/* Loading State */}
+{loading && (
+  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <StylistSkeleton key={i} />
+    ))}
+  </div>
+)}
 
         {/* No Results */}
         {!loading && filteredStylists.length === 0 && (
