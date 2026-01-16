@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getBankList, resolveAccountNumber, createTransferRecipient } from '../../../lib/paystack'
+// 👇 IMPORT THE SERVER ACTIONS HERE
+import { fetchBanksAction, verifyAccountAction, createRecipientAction } from './actions'
 
 interface BankAccount {
   id: string
@@ -60,24 +61,21 @@ export default function BankAccountPage() {
     }
   }
 
-  // UPDATED: Logic to handle Paystack duplicate bank codes
   const loadBanks = async () => {
     try {
-      const bankList = await getBankList()
+      // 👇 USE SERVER ACTION
+      const bankList = await fetchBanksAction()
       
       if (bankList && Array.isArray(bankList)) {
-        // 1. Remove duplicates by bank code
+        // Filter duplicates
         const uniqueBanks = bankList.reduce((acc: any[], current: any) => {
           const exists = acc.find(item => item.code === current.code)
-          if (!exists) {
-            return acc.concat([current])
-          }
+          if (!exists) return acc.concat([current])
           return acc
         }, [])
 
-        // 2. Sort alphabetically for better UX
+        // Sort A-Z
         const sortedBanks = uniqueBanks.sort((a, b) => a.name.localeCompare(b.name))
-        
         setBanks(sortedBanks)
       }
     } catch (error) {
@@ -110,14 +108,19 @@ export default function BankAccountPage() {
     setError('')
 
     try {
-      const accountDetails = await resolveAccountNumber(
+      // 👇 USE SERVER ACTION
+      const result = await verifyAccountAction(
         formData.accountNumber,
         formData.bankCode
       )
 
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
       setFormData({
         ...formData,
-        accountName: accountDetails.account_name
+        accountName: result.data.account_name
       })
 
       alert('Account verified successfully!')
@@ -144,13 +147,20 @@ export default function BankAccountPage() {
         throw new Error('Bank not found')
       }
 
-      const recipient = await createTransferRecipient({
-        type: 'nuban',
+      // 👇 USE SERVER ACTION (Fixes "Cannot find name createTransferRecipient")
+      const recipientRes = await createRecipientAction({
         name: formData.accountName,
         account_number: formData.accountNumber,
         bank_code: formData.bankCode
       })
 
+      if (!recipientRes.success) {
+        throw new Error(recipientRes.error)
+      }
+
+      const recipient = recipientRes.data
+
+      // Save to database
       const { error } = await supabase
         .from('stylist_bank_accounts')
         .insert({
@@ -243,7 +253,7 @@ export default function BankAccountPage() {
           <p className="text-gray-400">Add your bank account to receive payouts</p>
         </div>
 
-        {/* Saved Accounts List */}
+        {/* Saved Accounts */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-2xl font-bold text-white">Your Accounts</h3>
@@ -332,7 +342,6 @@ export default function BankAccountPage() {
                   className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none appearance-none"
                 >
                   <option value="">Choose your bank</option>
-                  {/* UPDATED: Key now uses code + index for absolute uniqueness */}
                   {banks.map((bank, idx) => (
                     <option key={`${bank.code}-${idx}`} value={bank.code}>
                       {bank.name}
