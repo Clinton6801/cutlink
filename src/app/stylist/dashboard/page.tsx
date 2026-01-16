@@ -76,6 +76,11 @@ export default function StylistDashboard() {
   }, [])
 
   const loadDashboardData = async (userId: string) => {
+    const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('balance, full_name, avatar_url')
+    .eq('id', userId)
+    .single()
     try {
       // 1. Get user profile
       const { data: profileData } = await supabase
@@ -337,7 +342,7 @@ export default function StylistDashboard() {
           <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
             <div>
               <p className="text-green-100 text-xs font-medium uppercase tracking-wider">Available Balance</p>
-              <h3 className="text-2xl font-bold text-white mb-4">₦{availableBalance.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">₦{profile?.balance?.toLocaleString() || '0'}</h3>
             </div>
             
             <div className="space-y-2">
