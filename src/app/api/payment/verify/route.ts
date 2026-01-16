@@ -33,14 +33,19 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Get booking from metadata
-    const bookingId = paymentData.metadata?.booking_id
+    // --- Update Step 2 in src/app/api/payment/verify/route.ts ---
 
-    if (!bookingId) {
-      return NextResponse.json(
-        { error: 'Booking ID not found in payment metadata' },
-        { status: 400 }
-      )
-    }
+// 2. Get booking from metadata (Checking multiple possible key formats)
+const metadata = paymentData.metadata;
+const bookingId = metadata?.booking_id || metadata?.bookingId || metadata?.['Booking ID'];
+
+if (!bookingId) {
+  console.error('Metadata received from Paystack:', metadata); // This helps you see the real key in your logs
+  return NextResponse.json(
+    { error: 'Booking ID not found in payment metadata', received_metadata: metadata },
+    { status: 400 }
+  )
+}
 
     // 3. Get booking details
     const { data: booking, error: bookingError } = await supabase
