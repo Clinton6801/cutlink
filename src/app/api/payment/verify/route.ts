@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verify payment with Paystack
+    // 1. Verify payment with Paystack
     const paymentData = await verifyPayment(reference)
 
     if (paymentData.status !== 'success') {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get booking from metadata
+    // 2. Get booking from metadata
     const bookingId = paymentData.metadata?.booking_id
 
     if (!bookingId) {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get booking details
+    // 3. Get booking details
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .select('*')
@@ -50,19 +50,21 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (bookingError || !booking) {
-      return NextResponse.json(
-        { error: 'Booking not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // Update booking payment status
+    // 4. PREVENT DOUBLE-CREDITING: Check if already paid
+    if (booking.payment_status === 'paid') {
+      return NextResponse.json({ success: true, message: 'Payment already processed' })
+    }
+
+    // 5. Update booking payment status
     const { error: updateError } = await supabase
       .from('bookings')
       .update({
         payment_status: 'paid',
         payment_verified_at: new Date().toISOString(),
-        payment_amount: paymentData.amount / 100, // Convert from kobo
+        payment_amount: paymentData.amount / 100,
         payment_channel: paymentData.channel,
         payment_ip_address: paymentData.ip_address
       })
@@ -70,10 +72,23 @@ export async function GET(request: NextRequest) {
 
     if (updateError) throw updateError
 
-    // Calculate payout breakdown
+    // 6. Calculate payout breakdown
     const payout = calculateStylistPayout(booking.price)
 
-    // Create or update stylist earnings record
+    // 7. NEW: Update Stylist's Available Balance
+    // We call the SQL function we created in Supabase
+    const { error: balanceError } = await supabase.rpc('increment_balance', {
+      user_id: booking.stylist_id,
+      amount: payout.stylistPayout // The actual amount the stylist keeps
+    })
+
+    if (balanceError) {
+      console.error('Error updating balance:', balanceError)
+      // We don't throw here to ensure the rest of the flow finishes, 
+      // but you should log this for manual correction if it fails.
+    }
+
+    // 8. Create earnings record
     const { data: existingEarnings } = await supabase
       .from('stylist_earnings')
       .select('*')
@@ -90,23 +105,23 @@ export async function GET(request: NextRequest) {
           platform_commission: payout.platformCommission,
           paystack_fee: payout.paystackFee,
           stylist_payout: payout.stylistPayout,
-          status: 'held', // Money is held until service completion
+          status: 'completed', // Changed from 'held' to 'completed' so it shows in balance
           payment_date: new Date().toISOString()
         })
     }
 
-    // Notify stylist about payment
+    // 9. Notify stylist
     await createNotification(
       booking.stylist_id,
       'payment_received',
       '💰 Payment Received!',
-      `Customer paid ₦${booking.price.toLocaleString()} for your upcoming booking. Funds will be released after completion.`,
+      `You've received ₦${payout.stylistPayout.toLocaleString()}. Balance updated!`,
       '/stylist/dashboard'
     )
 
     return NextResponse.json({
       success: true,
-      message: 'Payment verified successfully',
+      message: 'Payment verified and balance updated',
       booking_id: bookingId,
       payout: payout
     })
