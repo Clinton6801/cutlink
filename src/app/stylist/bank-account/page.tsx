@@ -60,10 +60,26 @@ export default function BankAccountPage() {
     }
   }
 
+  // UPDATED: Logic to handle Paystack duplicate bank codes
   const loadBanks = async () => {
     try {
       const bankList = await getBankList()
-      setBanks(bankList)
+      
+      if (bankList && Array.isArray(bankList)) {
+        // 1. Remove duplicates by bank code
+        const uniqueBanks = bankList.reduce((acc: any[], current: any) => {
+          const exists = acc.find(item => item.code === current.code)
+          if (!exists) {
+            return acc.concat([current])
+          }
+          return acc
+        }, [])
+
+        // 2. Sort alphabetically for better UX
+        const sortedBanks = uniqueBanks.sort((a, b) => a.name.localeCompare(b.name))
+        
+        setBanks(sortedBanks)
+      }
     } catch (error) {
       console.error('Error loading banks:', error)
     }
@@ -128,7 +144,6 @@ export default function BankAccountPage() {
         throw new Error('Bank not found')
       }
 
-      // Create Paystack transfer recipient
       const recipient = await createTransferRecipient({
         type: 'nuban',
         name: formData.accountName,
@@ -136,7 +151,6 @@ export default function BankAccountPage() {
         bank_code: formData.bankCode
       })
 
-      // Save to database
       const { error } = await supabase
         .from('stylist_bank_accounts')
         .insert({
@@ -147,7 +161,7 @@ export default function BankAccountPage() {
           account_name: formData.accountName,
           recipient_code: recipient.recipient_code,
           is_verified: true,
-          is_primary: accounts.length === 0 // First account is primary
+          is_primary: accounts.length === 0
         })
 
       if (error) throw error
@@ -165,13 +179,11 @@ export default function BankAccountPage() {
 
   const setPrimaryAccount = async (accountId: string) => {
     try {
-      // Set all to non-primary
       await supabase
         .from('stylist_bank_accounts')
         .update({ is_primary: false })
         .eq('stylist_id', user.id)
 
-      // Set selected as primary
       await supabase
         .from('stylist_bank_accounts')
         .update({ is_primary: true })
@@ -209,8 +221,7 @@ export default function BankAccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black">
-      {/* Header */}
+    <main className="min-h-screen bg-black text-white">
       <header className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/stylist/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-yellow-500 transition">
@@ -232,7 +243,7 @@ export default function BankAccountPage() {
           <p className="text-gray-400">Add your bank account to receive payouts</p>
         </div>
 
-        {/* Saved Accounts */}
+        {/* Saved Accounts List */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-2xl font-bold text-white">Your Accounts</h3>
@@ -261,27 +272,19 @@ export default function BankAccountPage() {
           ) : (
             <div className="space-y-4">
               {accounts.map((account) => (
-                <div
-                  key={account.id}
-                  className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6"
-                >
+                <div key={account.id} className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="text-xl font-bold text-white">{account.bank_name}</h4>
                         {account.is_primary && (
-                          <span className="px-3 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full">
-                            PRIMARY
-                          </span>
+                          <span className="px-3 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full">PRIMARY</span>
                         )}
-                        {account.is_verified && (
-                          <span className="text-green-500">✓</span>
-                        )}
+                        {account.is_verified && <span className="text-green-500">✓</span>}
                       </div>
                       <p className="text-gray-300 font-mono text-lg">{account.account_number}</p>
                       <p className="text-gray-400">{account.account_name}</p>
                     </div>
-
                     <div className="flex gap-2">
                       {!account.is_primary && (
                         <button
@@ -317,36 +320,29 @@ export default function BankAccountPage() {
                   setError('')
                 }}
                 className="text-gray-400 hover:text-white text-2xl"
-              >
-                ✕
-              </button>
+              >✕</button>
             </div>
 
             <div className="space-y-6">
-              {/* Select Bank */}
               <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">
-                  Select Bank
-                </label>
+                <label className="block text-sm font-bold text-gray-300 mb-2">Select Bank</label>
                 <select
                   value={formData.bankCode}
                   onChange={(e) => setFormData({ ...formData, bankCode: e.target.value, accountName: '' })}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-yellow-500 focus:outline-none appearance-none"
                 >
                   <option value="">Choose your bank</option>
-                  {banks.map((bank) => (
-                    <option key={bank.code} value={bank.code}>
+                  {/* UPDATED: Key now uses code + index for absolute uniqueness */}
+                  {banks.map((bank, idx) => (
+                    <option key={`${bank.code}-${idx}`} value={bank.code}>
                       {bank.name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Account Number */}
               <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">
-                  Account Number
-                </label>
+                <label className="block text-sm font-bold text-gray-300 mb-2">Account Number</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -366,26 +362,21 @@ export default function BankAccountPage() {
                 </div>
               </div>
 
-              {/* Account Name */}
               {formData.accountName && (
                 <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-2">
-                    Account Name
-                  </label>
+                  <label className="block text-sm font-bold text-gray-300 mb-2">Account Name</label>
                   <div className="px-4 py-3 bg-green-500/10 border border-green-500 rounded-lg">
                     <p className="text-green-500 font-bold">✓ {formData.accountName}</p>
                   </div>
                 </div>
               )}
 
-              {/* Error */}
               {error && (
                 <div className="bg-red-500/10 border border-red-500 rounded-lg p-4">
                   <p className="text-red-500 text-sm">{error}</p>
                 </div>
               )}
 
-              {/* Save Button */}
               <button
                 onClick={handleSave}
                 disabled={saving || !formData.accountName}
@@ -393,10 +384,6 @@ export default function BankAccountPage() {
               >
                 {saving ? 'Saving...' : 'Save Account'}
               </button>
-
-              <p className="text-xs text-gray-500 text-center">
-                Your bank account will be used to receive payouts. Make sure the details are correct.
-              </p>
             </div>
           </div>
         )}
