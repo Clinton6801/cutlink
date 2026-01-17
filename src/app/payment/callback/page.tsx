@@ -28,14 +28,9 @@ function PaymentCallbackContent() {
       }
 
       // Verify payment
-      const response = await fetch(`/api/payment/verify?reference=${reference}`)
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        setStatus('failed')
-        setMessage(data.error || 'Payment verification failed')
-        return
-      }
+      // This tells the whole browser to go to the verify route.
+// The API will handle the database and then redirect the user to the dashboard.
+window.location.href = `/api/payment/verify?reference=${reference}`;
 
       setStatus('success')
       setMessage('Payment successful! Redirecting to dashboard...')

@@ -139,5 +139,5 @@ if (!bookingId) {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     return NextResponse.redirect(new URL('/customer/dashboard?payment=error', baseUrl));
   }
-
+    
 }
