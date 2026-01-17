@@ -126,14 +126,10 @@ if (!bookingId) {
       `You've received ₦${payout.stylistPayout.toLocaleString()}. Balance updated!`,
       '/stylist/dashboard'
     )
+                  // Replace the final NextResponse.json at the bottom with this:
+return NextResponse.redirect(new URL('/dashboard?payment=success', request.url))
 
-    return NextResponse.json({
-      success: true,
-      message: 'Payment verified and balance updated',
-      booking_id: bookingId,
-      payout: payout
-    })
-
+ 
   } catch (error: any) {
     console.error('Payment verification error:', error)
     return NextResponse.json(
