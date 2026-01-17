@@ -126,15 +126,18 @@ if (!bookingId) {
       `You've received ₦${payout.stylistPayout.toLocaleString()}. Balance updated!`,
       '/stylist/dashboard'
     )
-                  // Replace the final NextResponse.json at the bottom with this:
-return NextResponse.redirect(new URL('customer/dashboard?payment=success', request.url))
+  // ... logic for update balance and notifications ...
 
- 
+    // 10. FINAL REDIRECT (This is for the Browser, not a fetch call)
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    return NextResponse.redirect(new URL('/customer/dashboard?payment=success', baseUrl));
+
   } catch (error: any) {
-    console.error('Payment verification error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Payment verification failed' },
-      { status: 500 }
-    )
+    console.error('Payment verification error:', error);
+    
+    // If there is an error, redirect to an error page instead of showing JSON
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    return NextResponse.redirect(new URL('/customer/dashboard?payment=error', baseUrl));
   }
+
 }
