@@ -1,10 +1,5 @@
 // Save as: src/lib/paystack.ts
-const getBaseUrl = () => {
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL; // Your live domain
-};
+
 
 // Then update the initializePayment function:
 export const PAYSTACK_CONFIG = {
@@ -79,7 +74,7 @@ export async function initializePayment(data: {
         reference: data.reference,
         currency: PAYSTACK_CONFIG.currency,
         metadata: data.metadata,
-        callback_url: `${getBaseUrl()}/api/payment/verify`
+        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/callback`
       })
     })
 
