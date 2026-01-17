@@ -127,7 +127,7 @@ if (!bookingId) {
       '/stylist/dashboard'
     )
                   // Replace the final NextResponse.json at the bottom with this:
-return NextResponse.redirect(new URL('/dashboard?payment=success', request.url))
+return NextResponse.redirect(new URL('customer/dashboard?payment=success', request.url))
 
  
   } catch (error: any) {
