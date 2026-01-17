@@ -31,22 +31,24 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    // 2. Get booking from metadata
-    // --- Update Step 2 in src/app/api/payment/verify/route.ts ---
-
-// 2. Get booking from metadata (Checking multiple possible key formats)
+// 2. Get booking from metadata (Fixed to handle various Paystack formats)
 const metadata = paymentData.metadata;
-const bookingId = metadata?.booking_id || metadata?.bookingId || metadata?.['Booking ID'];
+// This checks every possible way Paystack might send the ID back
+const bookingId = metadata?.booking_id || 
+                  metadata?.bookingId || 
+                  metadata?.['Booking ID'] || 
+                  metadata?.custom_fields?.[0]?.value; 
+
+console.log('--- DEBUG LOGS ---');
+console.log('Full Metadata from Paystack:', JSON.stringify(metadata));
+console.log('Resolved Booking ID:', bookingId);
 
 if (!bookingId) {
-  console.error('Metadata received from Paystack:', metadata); // This helps you see the real key in your logs
   return NextResponse.json(
-    { error: 'Booking ID not found in payment metadata', received_metadata: metadata },
+    { error: 'Booking ID not found', received_metadata: metadata },
     { status: 400 }
-  )
+  );
 }
-
     // 3. Get booking details
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
